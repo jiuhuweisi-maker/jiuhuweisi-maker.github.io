@@ -3,7 +3,7 @@ import PixelIcon from './PixelIcon.astro';
 import { BGM } from '../data/tavern';
 ---
 
-<!-- 迷你像素 BGM 播放器：默认不自动播放，音量 18%，偏好写入 localStorage -->
+<!-- 迷你像素 BGM 播放器：默认尝试自动播放（被拦截则等首次手势），音量 18%，偏好写入 localStorage -->
 <div class="tavern-player is-collapsed" data-player>
   <button
     class="tavern-player__fab"
@@ -50,9 +50,9 @@ import { BGM } from '../data/tavern';
     <div class="tavern-player__row tavern-player__toggles">
       <button type="button" data-player-mute aria-pressed="false">静音</button>
       <button type="button" data-player-loop aria-pressed="true">循环</button>
-      <button type="button" data-player-sfx aria-pressed="false">音效</button>
+      <button type="button" data-player-sfx aria-pressed="true" class="is-on">音效</button>
     </div>
 
-    <p class="tavern-player__status" data-player-status>点击 ▶ 播放，不会自动开始</p>
+    <p class="tavern-player__status" data-player-status>♪ 正在准备音乐…</p>
   </div>
 </div>

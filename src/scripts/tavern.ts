@@ -84,7 +84,7 @@ const DEFAULT_PREFS: AudioPrefs = {
   volume: BGM.defaultVolume,
   muted: false,
   loop: true,
-  sfx: false,
+  sfx: true, // V1.3：角色音效默认开启（220ms 节流 + 独立增益，不叠音）
   collapsed: true, // 默认收起成一个小音符，避免挡住头图（尤其手机端）
 };
 
@@ -107,8 +107,13 @@ function loadPrefs(): AudioPrefs {
 
 class TavernAudio {
   prefs = loadPrefs();
+  /** 全站唯一的音轨集合：任何 BGM 音轨都必须登记在这里，暂停/静音/音量一律遍历它 */
+  private voices = new Set<HTMLAudioElement>();
   private current: HTMLAudioElement | null = null;
   private incoming: HTMLAudioElement | null = null;
+  private starting = false;
+  private switchFailed = false;
+  private gesture: (() => void) | null = null;
   private master = 0;
   private masterTarget = 0;
   private duck = 1;
@@ -151,6 +156,7 @@ class TavernAudio {
     a.dataset.tavernVoice = '';
     a.setAttribute('aria-hidden', 'true');
     // 挂进播放器容器（无 controls，不渲染），便于统一暂停 / 检查 / 生命周期管理
+    this.voices.add(a);
     this.ui?.appendChild(a);
     a.addEventListener('error', () => this.status('音频加载失败，请刷新后重试'));
     return a;
@@ -208,7 +214,7 @@ class TavernAudio {
 
     const base = this.baseVolume();
     const a = this.current;
-    if (a && !a.paused) {
+    if (a && !a.paused && (this.playing || this.master > 0.002)) {
       const t = a.currentTime;
       if (this.incoming) {
         const p = clamp((t - (BGM.loopOut - BGM.crossfade)) / BGM.crossfade);
@@ -217,8 +223,17 @@ class TavernAudio {
         if (p >= 1 || t >= BGM.loopOut) this.finishSwitch();
       } else {
         a.volume = clamp(base);
-        if (this.prefs.loop && t >= BGM.loopOut - BGM.crossfade) void this.beginSwitch();
+        if (this.prefs.loop && !this.switchFailed && t >= BGM.loopOut - BGM.crossfade) void this.beginSwitch();
         else if (!this.prefs.loop && t >= BGM.loopOut && this.playing) this.finishPlayback();
+      }
+    } else if (!this.incoming) {
+      for (const v of this.voices) v.volume = 0;
+    }
+    // 不在 current / incoming 名下的音轨一律静音并暂停：杜绝「关不掉的第二条 BGM」
+    for (const v of this.voices) {
+      if (v !== this.current && v !== this.incoming) {
+        v.pause();
+        v.volume = 0;
       }
     }
 
@@ -227,8 +242,10 @@ class TavernAudio {
       this.raf = 0;
       this.lastFrame = 0;
       if (!this.playing) {
-        this.current?.pause();
-        this.incoming?.pause();
+        for (const v of this.voices) {
+          v.pause();
+          v.volume = 0;
+        }
       }
     }
   };
@@ -244,10 +261,11 @@ class TavernAudio {
     this.incoming = b;
     const ok = await this.startVoice(b, BGM.loopIn);
     if (!ok || this.incoming !== b) {
-      b.pause();
-      b.remove();
+      this.dropVoice(b);
       if (this.incoming === b) this.incoming = null;
-      this.status('循环播放被浏览器拦截，再点一次播放即可');
+      // 冷却：被拦截时不能每帧重建音轨（这正是「二重奏 / 多重奏」的来源）
+      this.switchFailed = true;
+      this.status('循环切换被拦截，点一次播放即可恢复');
       return;
     }
     b.volume = 0;
@@ -257,14 +275,33 @@ class TavernAudio {
     const old = this.current;
     const next = this.incoming;
     if (!next) return;
-    old?.pause();
-    if (old) {
-      old.currentTime = 0;
-      old.remove();
-    }
+    if (old) this.dropVoice(old);
     this.current = next;
     this.incoming = null;
+    this.switchFailed = false;
     next.volume = clamp(this.baseVolume());
+  }
+
+  /** 唯一的音轨销毁入口，保证没有任何音轨脱离管理器 */
+  private dropVoice(a: HTMLAudioElement): void {
+    a.pause();
+    a.volume = 0;
+    try { a.currentTime = 0; } catch { /* seek 未就绪时忽略 */ }
+    a.remove();
+    this.voices.delete(a);
+  }
+
+  /** 立即把音量/静音/暂停状态同步到全部音轨，不等下一帧 */
+  private forceApply(): void {
+    const base = this.baseVolume();
+    for (const v of this.voices) {
+      if (v === this.current && !this.incoming) v.volume = clamp(base);
+      else if (v !== this.current && v !== this.incoming) {
+        v.pause();
+        v.volume = 0;
+      }
+    }
+    this.startRaf();
   }
 
   private finishPlayback(): void {
@@ -275,29 +312,74 @@ class TavernAudio {
     this.syncUI();
   }
 
-  async play(): Promise<void> {
-    if (this.playing) return;
-    this.stopTimer = cancel(this.stopTimer);
-    if (!this.current) this.current = this.makeVoice();
-    const from = this.finished ? BGM.loopIn : this.current.currentTime > 0.2 ? this.current.currentTime : BGM.loopIn;
-    const ok = await this.startVoice(this.current, from);
-    this.finished = false;
-    if (!ok) {
-      this.status('浏览器阻止了自动播放，请再点一次 ♪');
+  async play(): Promise<boolean> {
+    if (this.playing) return true;
+    if (this.starting) return false;
+    this.starting = true;
+    try {
+      this.stopTimer = cancel(this.stopTimer);
+      if (!this.current) this.current = this.makeVoice();
+      // 启动前先清掉所有孤儿音轨，整个页面只保留 current / incoming 两条受管音轨
+      for (const v of this.voices) if (v !== this.current) this.dropVoice(v);
+      this.incoming = null;
+      this.switchFailed = false;
+      const from = this.finished ? BGM.loopIn : this.current.currentTime > 0.2 ? this.current.currentTime : BGM.loopIn;
+      const ok = await this.startVoice(this.current, from);
+      this.finished = false;
+      if (!ok) {
+        this.current.pause();
+        this.current.volume = 0;
+        this.status('点一下页面，酒馆音乐就会响起 ♪');
+        this.syncUI();
+        return false;
+      }
+      this.cancelGestureFallback();
+      this.playing = true;
+      this.masterTarget = 1;
+      this.status('正在播放');
+      this.startRaf();
       this.syncUI();
-      return;
+      return true;
+    } finally {
+      this.starting = false;
     }
-    this.playing = true;
-    this.masterTarget = 1;
-    this.status('正在播放');
-    this.startRaf();
-    this.syncUI();
+  }
+
+  /** 首次进入即尝试自动播放；被策略拦截时只注册一次真实手势，不弹窗、不反复重试 */
+  autoStart(): void {
+    void this.play().then((ok) => {
+      if (!ok) this.armGestureFallback();
+    });
+  }
+
+  private armGestureFallback(): void {
+    if (this.gesture || this.playing) return;
+    const start = () => {
+      this.cancelGestureFallback();
+      if (!this.playing) void this.play();
+    };
+    this.gesture = start;
+    window.addEventListener('pointerdown', start, { capture: true, passive: true });
+    window.addEventListener('keydown', start, { capture: true });
+    window.addEventListener('touchend', start, { capture: true, passive: true });
+    this.status('点一下页面，酒馆音乐就会响起 ♪');
+  }
+
+  private cancelGestureFallback(): void {
+    if (!this.gesture) return;
+    const g = this.gesture;
+    this.gesture = null;
+    window.removeEventListener('pointerdown', g, true);
+    window.removeEventListener('keydown', g, true);
+    window.removeEventListener('touchend', g, true);
   }
 
   pause(): void {
     if (!this.playing) return;
     this.playing = false;
-    this.masterTarget = 0; // 1s 渐出；rAF 把 master 降到 0 后才真正 pause
+    this.masterTarget = 0; // 1s 渐出；渐出结束会把全部音轨真正 pause
+    this.cancelGestureFallback();
+    this.forceApply();
     this.status('已暂停');
     this.syncUI();
   }
@@ -310,12 +392,14 @@ class TavernAudio {
   setVolume(v: number): void {
     this.prefs.volume = clamp(v);
     this.save();
+    this.forceApply();
     this.syncUI();
   }
 
   toggleMute(): void {
     this.prefs.muted = !this.prefs.muted;
     this.save();
+    this.forceApply();
     this.syncUI();
   }
 
@@ -358,6 +442,7 @@ class TavernAudio {
     } catch {
       /* Web Audio 不可用时静默降级，不影响对话 */
     }
+    // ducking 只压低 BGM；音效本身走独立增益，二者互不串扰
     this.duck = 0.32;
     this.duckTimer = cancel(this.duckTimer);
     this.duckTimer = later(() => {
@@ -366,12 +451,16 @@ class TavernAudio {
     }, 420);
   }
 
+  /** 调试/自检用：当前受管音轨数，永远 <= 2 */
+  get voiceCount(): number { return this.voices.size; }
+
   private onVisibility(): void {
     document.body.classList.toggle('is-page-hidden', document.hidden);
     if (document.hidden) {
       this.hiddenWasPlaying = this.playing;
-      this.current?.pause();
-      this.incoming?.pause();
+      // 若正在交叉淡化，先完成交接，避免恢复时留下一条暂停的第二音轨
+      if (this.incoming) this.finishSwitch();
+      for (const v of this.voices) v.pause();
       if (this.raf) {
         cancelAnimationFrame(this.raf);
         this.raf = 0;
@@ -386,8 +475,8 @@ class TavernAudio {
   }
 
   private teardown(): void {
-    this.current?.pause();
-    this.incoming?.pause();
+    this.cancelGestureFallback();
+    for (const v of this.voices) v.pause();
   }
 
   private bindUI(): void {
@@ -837,11 +926,22 @@ function renderFrameLayers(frame: HTMLElement | null): void {
  * 5. 启动
  * ------------------------------------------------------------------ */
 
+let audioSingleton: TavernAudio | null = null;
+let booted = false;
+
 function boot(): void {
+  // 单例守卫：即使脚本被重复注入，也只允许一个音频管理器 / 一套 UI 绑定
+  if (booted) return;
+  booted = true;
+  const globals = window as unknown as { __tavernAudioBooted?: boolean };
+  if (globals.__tavernAudioBooted) return;
+  globals.__tavernAudioBooted = true;
+
   const frame = one<HTMLElement>('[data-scene]');
   const img = one<HTMLImageElement>('.scene-frame__art img', frame ?? document);
   const player = one<HTMLElement>('[data-player]');
-  const audio = new TavernAudio(player);
+  const audio = audioSingleton ?? new TavernAudio(player);
+  audioSingleton = audio;
   new TavernLife(audio);
 
   if (frame && img) {
@@ -854,6 +954,9 @@ function boot(): void {
     ambientMotes(frame);
     renderFrameLayers(frame);
   }
+
+  // V1.3：默认开启 BGM，首次进入尝试自动播放；被拦截则等第一次真实手势
+  audio.autoStart();
 }
 
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot, { once: true });
