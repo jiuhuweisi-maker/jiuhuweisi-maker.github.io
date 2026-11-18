@@ -51,8 +51,9 @@ git add .github/workflows/deploy.yml && git commit -m "Enable Actions deploy" &&
 
 ## 其他配置
 
-- 传送门平台：`src/data/site.ts` 的 `socials`，只放真实存在的地址（GitHub / X / Bilibili / 抖音）。
-- 酒馆伙伴：`src/data/companions.ts`。**Bistro 才是店主**；GPT 龙娘是「酒馆管事 · 负责看店」，鲸戒是「聊天店员 · 负责陪聊」，别写反。`art` 指向 `public/images/` 下的透明背景 WebP 立绘，留空自动回退问号占位卡。
+- 传送门平台：`src/data/site.ts` 的 `socials`，只放真实存在的地址（GitHub / X / Bilibili / 抖音）。往数组里加一项，页面上就会自动多出一张目的地卡片，`href` / `icon` / `accent` 都要填；没有真实地址时不要写 `href`，宁可不加这张卡，也不要放假按钮。
+- 酒馆伙伴：`src/data/companions.ts`。**Bistro 才是店主**；GPT 龙娘是「酒馆管事 · 负责看店」，鲸戒是「聊天店员 · 负责陪聊」，别写反。`art` 指向 `public/images/` 下的透明背景 WebP 立绘，换立绘时把新图放进 `public/images/` 再改这里的路径即可，组件不用动；留空自动回退问号占位卡。`lines` 是点击卡片随机抽取的台词，`role` 是身份徽章文案，`setting` 是设定说明，`status` 是右上角状态牌，都在这个文件里。
+- 页面只给访客看内容：换立绘、加平台、改台词这类维护说明只写在本文档，不要出现在网页上。
 - 首屏插画：`public/images/tavern-hero.webp`（1600×901 桌面）与 `tavern-hero-sm.webp`（820×462 手机），`og-cover.webp` 是分享图。主视觉用 eager，其余图片 lazy。
 - 头图动效：`Hero.astro` 的 `.scene-fx` 是覆盖在原插画上的轻量图层（6 处暖灯光晕、月亮呼吸光、Zzz 上浮、桌面高光），`BaseLayout.astro` 生成随机星点并做 ±3px 鼠标视差，样式在 `global.css` 的 `living tavern scene` 段。没有视频、没有新依赖；`prefers-reduced-motion: reduce` 下停掉全部动画。
 - **手机端头图比例**：640px 断点下 `.scene-frame` 用 `aspect-ratio: 1600 / 901` 保持原图比例，`object-fit: cover` 但几乎不裁切，光效层 / Zzz / 热区 / 彩蛋按钮沿用桌面同一套百分比坐标。曾经把容器改成 `1 / 1` 导致鲸戒被切掉半张脸，并用 `177.6%` 宽度补偿光效坐标，这套做法**已经废弃**，不要恢复。
@@ -92,11 +93,22 @@ git add .github/workflows/deploy.yml && git commit -m "Enable Actions deploy" &&
 
 带 `detail` 的项目在委托板下方生成深紫档案卡，展示「解决什么问题 / 用到的东西 / 当前状态 / 实验方向 / 真实链接」，缺字段自动隐藏。`ai-automation-lab` 的九个实验方向完整保留，状态标为「进行中」，不把未验证实验写成已完成。整个站点不含任何假截图、假 Demo、假数据。
 
-## HTTPS 状态
+## V1.4 · 视觉精修（无新功能）
 
-- DNS A 记录指向 GitHub Pages 的 `185.199.108.153` 等四个 IP；`bridge.jiuhuweisi.me` 是独立解析，**从未改动**。
-- 正常 TLS 校验直连四个 Pages IP 均报 `Hostname mismatch`，说明自定义域名证书尚未签发。因此 **没有开启 Enforce HTTPS**（否则会 301 到一个无有效证书的 HTTPS），也没改 DNS、没删 CNAME、没替换证书。
-- 本机 CDP 调试时可用 `Security.setIgnoreCertificateErrors` 做内容冒烟，但那**不是修复**，只是绕过本机代理的证书问题。等 GitHub 签发证书后再开 Enforce HTTPS。
+- 章节上下留白 86 / 66 / 56px → 62 / 50 / 42px，标题区下边距 38 → 30px；头图比例与移动端适配不变。
+- 店主档案左侧换成原创像素盾徽 `OwnerCrest.astro`（盾牌 + 酒杯 + 星 + 铆钉 + `OWNER · LV.01` 缎带），只画酒馆纹章，不画人物长相。
+- 角色卡身份文案做成 RPG 职业徽章，台词框加名牌与像素角标，两张卡台词框底部对齐；立绘与角色数据未动。
+- 四张传送门统一图标底板（34×34）、按钮宽度（82px）、简介两行高度与卡片最小高度；链接与 `rel` 未动。
+- 首页标题区到头图加暖金引导线（不占布局高度）与画框上沿木质横梁。
+- 页面上的换立绘 / 加平台路径提示全部移除，维护说明只保留在本文档「其他配置」。
+
+## HTTPS 状态（2026-11-19 复核）
+
+- DNS A 记录指向 GitHub Pages 的 `185.199.108.153` 等 IP；无 AAAA、无 CAA 限制；`bridge.jiuhuweisi.me` 是独立解析，**从未改动**。
+- **证书已签发**：Let's Encrypt（`CN=jiuhuweisi.me`，SAN 含 `jiuhuweisi.me`），有效期 2026-11-18 16:46 UTC → 2027-02-16。直连四个 Pages IP 的正常 TLS 校验全部通过（TLS 1.3），浏览器侧主文档 `securityDetails` 主机名匹配、无 `certificateError` 事件。
+- Pages 配置已是 `https_enforced: true`，`http://jiuhuweisi.me/` 返回 301 → `https://jiuhuweisi.me/`；`pages/health` 显示 `https_error: null` / `responds_to_https: true` / `is_https_eligible: true`。
+- 之前排查时的「不安全 / Hostname mismatch」是**证书尚未签发阶段**的现象：当时服务端只发 `*.github.io` 通配证书。现在若浏览器仍提示不安全，优先清掉旧标签页与证书错误缓存（或本机代理 `127.0.0.1:56948` 的中间证书缓存），而不是改 DNS 或换证书。
+- 站内没有任何 `http://` 子资源，外链全部 `https://`，不存在混合内容。本轮**未改 DNS、未删 CNAME、未替换证书、未手动切换 Enforce HTTPS**。
 
 ## 三个后续工具（规划，未创建仓库）
 

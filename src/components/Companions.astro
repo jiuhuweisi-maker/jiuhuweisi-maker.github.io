@@ -46,21 +46,17 @@ import { companions } from '../data/companions';
           <div class="companion-card__body">
             <p class="companion-card__en">{c.en}</p>
             <h3>{c.name}</h3>
-            <p class="companion-card__role">{c.role}</p>
+            <p class="companion-card__role"><span class="companion-card__role-mark" aria-hidden="true">✦</span>{c.role}</p>
             <p class="companion-card__setting">{c.setting}</p>
 
             <div class="dialogue">
-              <span class="dialogue__name">{c.name}</span>
+              <span class="dialogue__name">{c.name} ▸</span>
               <p class="dialogue__text" data-line>{c.lines[0]}</p>
             </div>
-            <p class="companion-card__hint">点一下，随机听一句 ▸</p>
+            <p class="companion-card__hint">点一下卡片，随机听一句 ▸</p>
           </div>
         </article>
       ))}
     </div>
-
-    <p class="section-note" data-reveal>
-      想换立绘？把透明背景的 WebP 放进 <code>public/images/</code>，在 <code>src/data/companions.ts</code> 改 <code>art</code> 路径即可；台词也都在同一个文件里。
-    </p>
   </div>
 </section>

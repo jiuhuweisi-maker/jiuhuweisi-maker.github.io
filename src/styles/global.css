@@ -256,15 +256,16 @@ code {
 }
 
 .section {
-  padding: 86px 0;
+  /* 视觉精修：章节上下留白 86px -> 62px，仍保留段与段之间的呼吸感 */
+  padding: 62px 0;
 }
 .section-head {
   text-align: center;
   max-width: 760px;
-  margin: 0 auto 38px;
+  margin: 0 auto 30px;
 }
 .section-kicker {
-  margin: 0 0 14px;
+  margin: 0 0 12px;
   font-family: var(--font-pixel);
   font-size: 9px;
   line-height: 1.6;
@@ -299,19 +300,11 @@ code {
   text-shadow: none;
 }
 .section-desc {
-  margin: 16px auto 0;
+  margin: 14px auto 0;
   max-width: 620px;
   font-size: 13.5px;
   line-height: 1.9;
   color: var(--cream-dim);
-}
-.section-note {
-  margin: 26px auto 0;
-  max-width: 720px;
-  text-align: center;
-  font-size: 11.5px;
-  line-height: 2;
-  color: #9c90b5;
 }
 
 /* accents for pixel icons */
@@ -567,10 +560,25 @@ code {
   margin-top: 14px;
 }
 .hero__hint {
+  position: relative;
   margin: 10px 0 0;
   font-size: 11.5px;
   letter-spacing: 0.08em;
   color: #9b8bb6;
+}
+/* 标题区 -> 头图之间的一道暖金引导线：绝对定位，不增加任何留白，
+   让招牌/说明与下方店内景看起来是同一间酒馆而不是两段拼接。 */
+.hero__hint::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 100%;
+  width: 2px;
+  height: 26px;
+  transform: translateX(-50%);
+  background: linear-gradient(180deg, rgba(240, 182, 87, 0.6), transparent);
+  box-shadow: 0 0 8px rgba(240, 182, 87, 0.35);
+  pointer-events: none;
 }
 
 /* the illustration */
@@ -584,6 +592,20 @@ code {
     0 0 0 4px var(--ink),
     0 14px 0 rgba(10, 7, 24, 0.5),
     0 0 60px rgba(240, 182, 87, 0.12);
+}
+/* 画框上沿的木质横梁：把头图挂进这间店，与招牌、底部吧台条呼应 */
+.hero__scene::before {
+  content: "";
+  position: absolute;
+  left: -4px;
+  right: -4px;
+  top: -4px;
+  z-index: 3;
+  height: 9px;
+  background: linear-gradient(180deg, #a1703f, #7b5136 62%, #3b261c);
+  border-bottom: 2px solid var(--ink);
+  box-shadow: inset 0 2px 0 rgba(255, 220, 160, 0.22);
+  pointer-events: none;
 }
 .lantern {
   position: absolute;
@@ -684,7 +706,7 @@ code {
   justify-content: space-around;
   flex-wrap: wrap;
   gap: 8px 20px;
-  margin-top: 30px;
+  margin-top: 26px;
   padding: 16px 22px;
   background: linear-gradient(180deg, var(--wood-2), var(--wood-0));
   border-top: 4px solid var(--wood-3);
@@ -1245,6 +1267,45 @@ code {
 }
 
 /* ---------- character sheet ---------- */
+/* 店主徽章：像素盾徽 + 缎带，只画酒馆纹章，不画人物长相 */
+.owner-crest {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+}
+.owner-crest__shield {
+  display: block;
+  filter:
+    drop-shadow(0 0 12px rgba(240, 182, 87, 0.3))
+    drop-shadow(0 3px 0 rgba(10, 7, 24, 0.55));
+}
+.owner-crest__ribbon {
+  position: relative;
+  padding: 4px 10px;
+  font-family: var(--font-pixel);
+  font-size: 6.5px;
+  line-height: 1.4;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+  color: var(--ink);
+  background: linear-gradient(180deg, #ffd98a, #e0a047);
+  border: 2px solid var(--ink);
+  box-shadow: 2px 2px 0 rgba(10, 7, 24, 0.5);
+}
+.owner-crest__ribbon::before,
+.owner-crest__ribbon::after {
+  content: "";
+  position: absolute;
+  top: 4px;
+  width: 6px;
+  height: 8px;
+  background: #a1703f;
+  border: 2px solid var(--ink);
+}
+.owner-crest__ribbon::before { left: -6px; }
+.owner-crest__ribbon::after { right: -6px; }
+
 .sheet {
   display: grid;
   grid-template-columns: 262px 1fr;
@@ -1262,18 +1323,20 @@ code {
   display: grid;
   place-items: center;
   align-content: center;
-  gap: 12px;
-  width: 152px;
-  height: 152px;
+  gap: 9px;
+  width: 168px;
+  height: 168px;
   margin: 0 auto;
-  background: var(--night-1);
+  background:
+    radial-gradient(circle at 50% 40%, rgba(240, 182, 87, 0.09), transparent 68%),
+    var(--night-1);
   border: 4px solid var(--wood-3);
   box-shadow: inset 0 0 0 3px #4a3355, 0 0 26px rgba(240, 182, 87, 0.18);
-  --icon-a: var(--amber);
 }
 .sheet__portrait-label {
   font-family: var(--font-pixel);
-  font-size: 7px;
+  font-size: 6.5px;
+  letter-spacing: 0.1em;
   color: var(--lav);
 }
 .sheet__online {
@@ -1493,6 +1556,8 @@ code {
   animation: twinkle 4s steps(2) infinite;
 }
 .companion-card__body {
+  display: flex;
+  flex-direction: column;
   padding: 20px 22px;
 }
 .companion-card__en {
@@ -1503,40 +1568,75 @@ code {
   color: var(--lav);
 }
 .companion-card h3 {
-  margin: 7px 0 4px;
-  font-size: 22px;
+  margin: 7px 0 9px;
+  font-size: 23px;
   font-weight: 900;
   letter-spacing: 0.05em;
   color: var(--amber-soft);
 }
+/* 身份徽章：把「管事 / 店员」做成 RPG 职业牌，两张卡同一规格 */
 .companion-card__role {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  gap: 6px;
   margin: 0;
-  font-size: 12px;
-  color: var(--cream-dim);
-}
-.companion-card__setting {
-  margin: 8px 0 0;
+  padding: 5px 9px;
   font-size: 11px;
-  color: #9386ae;
+  line-height: 1.4;
+  font-weight: 700;
+  color: var(--cream);
+  background: rgba(185, 166, 239, 0.12);
+  border: 2px solid #5b4372;
+  box-shadow: 2px 2px 0 rgba(10, 7, 24, 0.5);
 }
-.dialogue {
-  position: relative;
-  margin-top: 16px;
-  padding: 11px 13px;
-  background: var(--night-1);
-  border: 2px solid #4a3355;
-  box-shadow: inset 0 0 0 2px rgba(185, 166, 239, 0.07);
+.accent-cyan .companion-card__role {
+  background: rgba(139, 216, 230, 0.1);
+  border-color: #3f7d8f;
 }
-.dialogue__name {
+.companion-card__role-mark {
   font-size: 10px;
-  font-weight: 800;
   color: var(--amber);
 }
+.companion-card__setting {
+  margin: 11px 0 0;
+  font-size: 11px;
+  line-height: 1.7;
+  color: #9386ae;
+}
+/* 台词框：名牌 + 像素角标，贴卡片底部让两张卡对齐 */
+.dialogue {
+  position: relative;
+  margin-top: auto;
+  padding: 13px 13px 11px;
+  background: var(--night-1);
+  border: 2px solid #4a3355;
+  box-shadow: inset 0 0 0 2px rgba(185, 166, 239, 0.07), 3px 3px 0 rgba(10, 7, 24, 0.5);
+}
+.dialogue::before,
+.dialogue::after {
+  content: "";
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  background: var(--amber);
+}
+.dialogue::before { top: -2px; left: -2px; }
+.dialogue::after { bottom: -2px; right: -2px; }
+.dialogue__name {
+  display: inline-block;
+  padding: 3px 8px;
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--ink);
+  background: var(--amber);
+  border: 2px solid var(--ink);
+}
 .dialogue__text {
-  margin: 5px 0 0;
-  min-height: 2.8em;
+  margin: 9px 0 0;
+  min-height: 3.2em;
   font-size: 13px;
-  line-height: 1.6;
+  line-height: 1.7;
   color: var(--cream);
 }
 .companion-card.is-talking .dialogue__text {
@@ -1554,13 +1654,16 @@ code {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 24px;
 }
+/* 四张门用同一套尺寸：固定图标底板、统一按钮宽度与两行简介高度，
+   长 handle 也不会把某一张卡撑得比别的高。 */
 .portal-card {
   position: relative;
   display: grid;
-  grid-template-columns: 88px 1fr auto;
+  grid-template-columns: 88px minmax(0, 1fr) auto;
   align-items: center;
   gap: 18px;
-  padding: 22px 24px;
+  min-height: 148px;
+  padding: 20px 22px;
   overflow: hidden;
   background: linear-gradient(120deg, var(--night-3), var(--night-1));
   border: 3px solid #4a3355;
@@ -1590,8 +1693,9 @@ code {
   position: relative;
   display: grid;
   place-items: center;
-  width: 78px;
-  height: 78px;
+  width: 76px;
+  height: 76px;
+  margin: 0 auto;
   background: var(--night-1);
   border: 2px solid #5b4788;
   box-shadow: 0 0 22px rgba(185, 166, 239, 0.22);
@@ -1601,17 +1705,24 @@ code {
 .portal-card:hover .portal-card__gate {
   box-shadow: 0 0 30px rgba(240, 182, 87, 0.4);
 }
+/* 平台图标统一装进同一块小底板，四种 sprite 视觉重量一致 */
 .portal-card__icon {
   position: absolute;
   top: 50%;
   left: 50%;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
   transform: translate(-50%, -50%);
+  background: rgba(18, 14, 41, 0.92);
+  border: 2px solid #5b4788;
   --icon-a: var(--amber-soft);
 }
 .portal-card__text {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 4px;
   min-width: 0;
 }
 .portal-card__en {
@@ -1629,18 +1740,23 @@ code {
 }
 .portal-card__handle {
   font-size: 12px;
+  line-height: 1.5;
   color: var(--cyan);
+  overflow-wrap: anywhere;
 }
 .portal-card__desc {
+  min-height: 35px;
   font-size: 11px;
   line-height: 1.6;
   color: var(--cream-dim);
 }
 .portal-card__go {
-  padding: 9px 12px;
+  min-width: 82px;
+  padding: 9px 10px;
   font-size: 12px;
   font-weight: 800;
   white-space: nowrap;
+  text-align: center;
   color: var(--amber);
   border: 2px solid var(--amber);
 }
@@ -1786,8 +1902,8 @@ code {
   .companion-grid, .portal-grid { gap: 18px; }
   .companion-card { grid-template-columns: minmax(0, 38%) minmax(0, 1fr); min-height: 340px; }
   .companion-card__art img { max-height: 316px; }
-  .portal-card { grid-template-columns: 76px 1fr; }
-  .portal-card__go { grid-column: 2; justify-self: start; }
+  .portal-card { grid-template-columns: 76px minmax(0, 1fr); }
+  .portal-card__go { grid-column: 2; justify-self: start; margin-top: 2px; }
 }
 
 @media (max-width: 860px) {
@@ -1821,13 +1937,13 @@ code {
   .sheet { grid-template-columns: 1fr; }
   .sheet__side { border-right: none; border-bottom: 3px dashed #4a3355; }
   .companion-grid, .portal-grid { grid-template-columns: 1fr; }
-  .section { padding: 66px 0; }
+  .section { padding: 50px 0; }
   .hero__bar { font-size: 11px; }
 }
 
 @media (max-width: 640px) {
   .container { width: min(100% - 28px, 1120px); }
-  .section { padding: 56px 0; }
+  .section { padding: 42px 0; }
   .section-title { letter-spacing: 0.05em; }
   .hero { padding-top: 28px; }
   .sign { width: min(100%, 340px); margin-bottom: 16px; }
@@ -1860,8 +1976,11 @@ code {
   .companion-card__art { min-height: 318px; padding: 10px; border-right: none; border-bottom: 3px solid #4a3355; }
   .companion-card__art img { max-height: 296px; }
   .companion-card__body { padding: 18px 20px; }
-  .portal-card { grid-template-columns: 66px 1fr; gap: 12px; padding: 18px 16px; }
+  .dialogue { margin-top: 16px; }
+  .portal-card { grid-template-columns: 66px minmax(0, 1fr); gap: 12px; padding: 18px 16px; min-height: 0; }
   .portal-card__gate { width: 64px; height: 64px; }
+  .portal-card__icon { width: 30px; height: 30px; }
+  .portal-card__desc { min-height: 0; }
   .portal-card__title { font-size: 27px; }
   .footer-inner { flex-direction: column; text-align: center; }
   .back-to-top { right: 14px; bottom: 14px; }

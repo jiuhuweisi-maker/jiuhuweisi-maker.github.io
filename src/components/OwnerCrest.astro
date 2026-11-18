@@ -1,0 +1,89 @@
+---
+/**
+ * 店主徽章 —— 纯 SVG 像素盾徽。
+ *
+ * 只画酒馆纹章元素（盾形、酒杯、星、铆钉、缎带），不含任何人物面部或
+ * 个人形象：Bistro 是店主，但这里不替他编造长相。所有坐标都是整数，
+ * shape-rendering="crispEdges" 保证放大后仍是干净的像素块。
+ */
+---
+
+<div class="owner-crest">
+  <svg
+    class="owner-crest__shield"
+    viewBox="0 0 32 32"
+    width="96"
+    height="96"
+    shape-rendering="crispEdges"
+    aria-hidden="true"
+    focusable="false"
+  >
+    <!-- 1. 盾形外轮廓：深墨描边 -->
+    <g fill="#1a1030">
+      <rect x="10" y="1" width="12" height="1" />
+      <rect x="8" y="2" width="16" height="1" />
+      <rect x="6" y="3" width="20" height="1" />
+      <rect x="5" y="4" width="22" height="17" />
+      <rect x="6" y="21" width="20" height="1" />
+      <rect x="7" y="22" width="18" height="1" />
+      <rect x="8" y="23" width="16" height="1" />
+      <rect x="10" y="24" width="12" height="1" />
+      <rect x="12" y="25" width="8" height="1" />
+      <rect x="14" y="26" width="4" height="1" />
+    </g>
+
+    <!-- 2. 琥珀金内框 -->
+    <g fill="#f0b657">
+      <rect x="8" y="3" width="16" height="1" />
+      <rect x="7" y="4" width="18" height="1" />
+      <rect x="6" y="5" width="20" height="15" />
+      <rect x="7" y="20" width="18" height="1" />
+      <rect x="8" y="21" width="16" height="1" />
+      <rect x="10" y="22" width="12" height="1" />
+      <rect x="12" y="23" width="8" height="1" />
+      <rect x="14" y="24" width="4" height="1" />
+    </g>
+
+    <!-- 3. 深紫盾面 -->
+    <g fill="#2a1c4a">
+      <rect x="9" y="5" width="14" height="1" />
+      <rect x="8" y="6" width="16" height="1" />
+      <rect x="8" y="7" width="16" height="11" />
+      <rect x="9" y="18" width="14" height="1" />
+      <rect x="10" y="19" width="12" height="1" />
+      <rect x="12" y="20" width="8" height="1" />
+      <rect x="14" y="21" width="4" height="1" />
+    </g>
+
+    <!-- 4. 四角铆钉 -->
+    <g fill="#ffd98a">
+      <rect x="9" y="6" width="1" height="1" />
+      <rect x="22" y="6" width="1" height="1" />
+      <rect x="9" y="17" width="1" height="1" />
+      <rect x="22" y="17" width="1" height="1" />
+    </g>
+
+    <!-- 5. 热气与两侧小星 -->
+    <g fill="#8bd8e6">
+      <rect x="14" y="7" width="1" height="2" />
+      <rect x="18" y="7" width="1" height="2" />
+    </g>
+    <g fill="#fff1d2">
+      <rect x="10" y="9" width="1" height="3" />
+      <rect x="9" y="10" width="3" height="1" />
+      <rect x="22" y="9" width="1" height="3" />
+      <rect x="21" y="10" width="3" height="1" />
+    </g>
+
+    <!-- 6. 中央酒杯：泡沫 / 杯身 / 高光 / 把手 / 木底座 -->
+    <rect x="12" y="9" width="8" height="2" fill="#fff1d2" />
+    <rect x="12" y="11" width="8" height="5" fill="#f0b657" />
+    <rect x="13" y="11" width="2" height="4" fill="#ffd98a" />
+    <rect x="20" y="12" width="2" height="1" fill="#f0b657" />
+    <rect x="21" y="13" width="1" height="2" fill="#f0b657" />
+    <rect x="20" y="15" width="2" height="1" fill="#f0b657" />
+    <rect x="11" y="16" width="10" height="1" fill="#a1703f" />
+  </svg>
+
+  <span class="owner-crest__ribbon">OWNER · LV.01</span>
+</div>
