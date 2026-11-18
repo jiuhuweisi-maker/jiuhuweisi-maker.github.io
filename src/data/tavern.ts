@@ -38,7 +38,7 @@ export const ACTORS: ActorConfig[] = [
     id: 'dragon',
     name: 'GPT 龙娘',
     en: 'DRAGON MAID',
-    role: '酒馆管理员 · 今晚看店',
+    role: '酒馆管事 · 今晚看店',
     zone: { x: 0.215, y: 0.15, w: 0.315, h: 0.72 },
     status: 'ON DUTY',
     lines: [
@@ -56,7 +56,7 @@ export const ACTORS: ActorConfig[] = [
     id: 'whale',
     name: '鲸戒',
     en: 'WHALE RING',
-    role: '聊天担当 · 正在摸鱼',
+    role: '聊天店员 · 正在摸鱼',
     zone: { x: 0.605, y: 0.395, w: 0.335, h: 0.395 },
     status: 'SLEEPING',
     lines: [

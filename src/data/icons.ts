@@ -247,6 +247,36 @@ export const ICONS: Record<string, string[]> = {
     '..aaaa......',
     '............',
   ],
+  /** 原创像素小电视：用于 Bilibili 传送门（不引用第三方商标素材） */
+  tv: [
+    '............',
+    '.a........a.',
+    '..a......a..',
+    '..bbbbbbbb..',
+    '.bbbbbbbbbb.',
+    '.bccccccccb.',
+    '.bcddccddcb.',
+    '.bcddccddcb.',
+    '.bccccccccb.',
+    '.bbbbbbbbbb.',
+    '..b......b..',
+    '............',
+  ],
+  /** 原创像素竖屏播放框：用于抖音短链传送门 */
+  reel: [
+    '............',
+    '.bbbbbbbbbb.',
+    '.bccccccccb.',
+    '.bcccaacccb.',
+    '.bcccaaaacb.',
+    '.bccaaaaacb.',
+    '.bcccaaaacb.',
+    '.bcccaacccb.',
+    '.bccccccccb.',
+    '.bbbbbbbbbb.',
+    '....dddd....',
+    '............',
+  ],
 };
 
 export type IconName = keyof typeof ICONS;

@@ -34,7 +34,7 @@ export interface SocialLink {
   description: string;
   href: string;
   icon: IconName;
-  accent: 'amber' | 'lavender' | 'cyan';
+  accent: 'amber' | 'lavender' | 'cyan' | 'rose' | 'mint';
 }
 
 /** 只放真实存在的地址；没有的先别写进来。 */
@@ -56,6 +56,24 @@ export const socials: SocialLink[] = [
     href: 'https://x.com/WuBistro2',
     icon: 'x',
     accent: 'cyan',
+  },
+  {
+    id: 'bilibili',
+    label: 'Bilibili',
+    handle: 'space.bilibili.com/405771812',
+    description: '视频作品、AI 创作实验和游戏相关内容',
+    href: 'https://space.bilibili.com/405771812',
+    icon: 'tv',
+    accent: 'rose',
+  },
+  {
+    id: 'douyin',
+    label: '抖音',
+    handle: 'v.douyin.com/zbNtSOVVQrA',
+    description: '短视频创作、游戏剪辑和其他个人作品',
+    href: 'https://v.douyin.com/zbNtSOVVQrA/',
+    icon: 'reel',
+    accent: 'mint',
   },
 ];
 

@@ -5,15 +5,31 @@
  * 规则：
  *   - `url`  / `repo` 必须是真实可访问的地址；没有就留空（省略）。
  *     留空时卡片只展示介绍和状态，不会显示任何可点击的假按钮。
- *   - 不要编造成果、数据或完成状态；状态用 status 里的四种之一。
+ *   - 不要编造成果、数据或完成状态；状态用 status 里的五种之一。
  *   - `icon` 取自 src/data/icons.ts，`category` 用于委托板筛选。
+ *   - `detail` 是可选的「委托档案」：只写仓库 README / 描述里可核对的真实内容，
+ *     字段缺失就自动隐藏，不要为了填满而编截图、Demo 或运行数据。
  */
 
 import type { IconName } from './icons';
 
-export type ProjectStatus = 'active' | 'experiment' | 'done' | 'unreleased';
+export type ProjectStatus = 'active' | 'wip' | 'experiment' | 'done' | 'unreleased';
 export type ProjectCategory = 'robot' | 'ai' | 'video' | 'network' | 'unreleased';
 export type ProjectAccent = 'amber' | 'lavender' | 'cyan' | 'rose' | 'mint';
+
+/** 重点项目的可选档案。全部字段都可省略，缺什么就不显示什么。 */
+export interface ProjectDetail {
+  /** 档案里实际解决的问题 / 项目在做什么 */
+  problem: string;
+  /** 真实使用的技术，取自仓库说明 */
+  stack?: string[];
+  /** 当前开发状态的真实说明 */
+  state?: string;
+  /** 真实的方向 / 章节清单（例如实验室的九大方向） */
+  areas?: string[];
+  /** 真实可访问的分项链接（Demo、README、文档等） */
+  links?: { label: string; href: string }[];
+}
 
 export interface Project {
   id: string;
@@ -31,10 +47,13 @@ export interface Project {
   repo?: string;
   /** 卡片上钉的小纸条备注，可省略 */
   note?: string;
+  /** 有真实内容时才填，会在委托板下方生成一张档案卡 */
+  detail?: ProjectDetail;
 }
 
 export const STATUS_META: Record<ProjectStatus, { label: string; hint: string }> = {
   active: { label: '开发中', hint: '仍在持续更新' },
+  wip: { label: '进行中', hint: '持续记录中' },
   experiment: { label: '实验中', hint: '可能会有变动' },
   done: { label: '已完成', hint: '成果可以查看' },
   unreleased: { label: '未公开', hint: '暂无公开链接' },
@@ -98,13 +117,35 @@ export const projects: Project[] = [
     name: 'AI 自动化实验室',
     en: 'AUTOMATION LAB',
     description:
-      'AI Agent、多模型协作、Codex 与 WorkBuddy 的日常自动化实践。点子散落在各个项目里，目前还没有单独整理成公开仓库。',
-    tags: ['AI Agent', 'Codex', 'WorkBuddy', '多模型'],
-    status: 'experiment',
+      '记录我折腾 AI Agent、多模型协作、服务器自动化和各种 AI 创作工具的实验过程。成功的、翻车的，都留一点记录。',
+    tags: ['AI Agent', 'Automation', 'Multi-Model'],
+    status: 'wip',
     category: 'ai',
     icon: 'flask',
     accent: 'mint',
-    note: '进行中的实验记录',
+    url: 'https://github.com/jiuhuweisi-maker/ai-automation-lab',
+    repo: 'https://github.com/jiuhuweisi-maker/ai-automation-lab',
+    note: '九大方向 · 持续记录中',
+    detail: {
+      problem:
+        '把散落在各个项目里的 AI 实践集中成一份能查证的记录：明确区分「已验证」「进行中」「待整理」，不把「用过」写成「验证过结果」。',
+      stack: ['AI Agent 协作', '多模型 API', 'VPS 自动化', 'AI 视频剪辑', '提示词工程'],
+      state: '仓库已公开（MIT），九大方向与编号实验持续补充中；这里只引用仓库里真实存在的条目。',
+      areas: [
+        '01 AI Agent 协作',
+        '02 多模型与 API',
+        '03 QQ 智能机器人',
+        '04 VPS 自动化',
+        '05 AI 网站开发',
+        '06 AI 视频自动剪辑',
+        '07 AI 图像与音乐',
+        '08 社交平台自动化',
+        '09 AI 工具与工作流',
+      ],
+      links: [
+        { label: '仓库 README', href: 'https://github.com/jiuhuweisi-maker/ai-automation-lab#readme' },
+      ],
+    },
   },
   {
     id: 'ifish-v5',
@@ -133,6 +174,15 @@ export const projects: Project[] = [
     accent: 'amber',
     url: 'https://github.com/jiuhuweisi-maker/cs2-skin-price-trend',
     repo: 'https://github.com/jiuhuweisi-maker/cs2-skin-price-trend',
+    detail: {
+      problem:
+        '把两件 CS2 饰品的真实历史价格做成 90 秒 1080p 走势视频；数据来自 csgoskins.gg 的真实抓取值，仓库明确声明无模拟数据。',
+      stack: ['Python', 'Canvas', 'ffmpeg', 'csgoskins.gg'],
+      state: '成片 1920×1080 / 30fps / 90s，仓库内另有 skin-reveal 本地交互工作台。',
+      links: [
+        { label: '查看仓库', href: 'https://github.com/jiuhuweisi-maker/cs2-skin-price-trend' },
+      ],
+    },
   },
   {
     id: 'tun-postmortem',
@@ -147,6 +197,15 @@ export const projects: Project[] = [
     accent: 'cyan',
     url: 'https://github.com/jiuhuweisi-maker/proxy-tun-loop-postmortem',
     repo: 'https://github.com/jiuhuweisi-maker/proxy-tun-loop-postmortem',
+    detail: {
+      problem:
+        '同一份订阅、同一个节点，一端正常一端全超时；复盘定位到订阅规则缺少节点自身 IP 的 DIRECT，出站连接被 TUN 二次送回代理形成自环。',
+      stack: ['mihomo / Clash.Meta', 'TUN', 'IP-CIDR,DIRECT', '规则顺序'],
+      state: '复盘文档已脱敏公开，不含真实 IP、UUID、密钥或订阅令牌，只保留方法与结论。',
+      links: [
+        { label: '阅读复盘', href: 'https://github.com/jiuhuweisi-maker/proxy-tun-loop-postmortem' },
+      ],
+    },
   },
   {
     id: 'bistros-tavern',

@@ -966,6 +966,7 @@ code {
 }
 .status-active { color: #1c5967; background: #d8f1f5; border-color: #6cb9cc; }
 .status-experiment { color: #5b3d86; background: #eee2ff; border-color: #a98cdb; }
+.status-wip { color: #355b6b; background: #dbeef5; border-color: #73aec2; }
 .status-done { color: #2c6b3c; background: #ddf2df; border-color: #79b986; }
 .status-unreleased { color: #5a4a44; background: #e6dfd6; border-color: #a9968b; }
 .quest-card__en {

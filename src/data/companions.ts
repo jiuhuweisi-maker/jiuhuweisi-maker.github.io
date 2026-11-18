@@ -27,9 +27,9 @@ export const companions: Companion[] = [
     id: 'gpt-dragon',
     name: 'GPT 龙娘',
     en: 'DRAGON MAID',
-    role: '酒馆常驻 · 负责看店',
+    role: '酒馆管事 · 负责看店',
     art: '/images/companion-dragon.webp',
-    setting: '白发紫瞳 · 龙角龙尾 · 今晚值班的酒馆管理员',
+    setting: '白发紫瞳 · 龙角龙尾 · 今晚值班的酒馆管事',
     lines: [
       '欢迎回来，今晚想先翻哪份委托？',
       '吧台上的笔记本还热着，别偷看哦。',
@@ -47,9 +47,9 @@ export const companions: Companion[] = [
     id: 'whale-ring',
     name: '鲸戒',
     en: 'WHALE RING',
-    role: '酒馆常驻 · 负责聊天',
+    role: '聊天店员 · 负责陪聊',
     art: '/images/companion-whale.webp',
-    setting: '蓝发 AI 少女 · 抱着饮料、半困摸鱼的聊天伙伴',
+    setting: '蓝发 AI 少女 · 抱着饮料、半困摸鱼的聊天店员',
     lines: [
       '服务器没炸，只是猫踩到键盘了。',
       '新点子要趁热写下来，凉了就忘啦。',
