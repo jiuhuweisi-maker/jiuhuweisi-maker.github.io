@@ -912,6 +912,8 @@ function ambientMotes(frame: HTMLElement | null): void {
 class TavernFrames {
   private layers = new Map<ActorId, HTMLImageElement>();
   private timers = new Map<ActorId, number[]>();
+  /** 持有预载引用，避免浏览器在下载完成前回收 Image 对象 */
+  private preloads: HTMLImageElement[] = [];
 
   constructor(frame: HTMLElement) {
     const art = one<HTMLElement>('.scene-frame__art', frame);
@@ -929,6 +931,14 @@ class TavernFrames {
       img.src = cfg.frames[0];
       art.appendChild(img);
       this.layers.set(cfg.actor as ActorId, img);
+      // 动作帧只有几 KB，但线上首访走代理时可能要几秒；在页面加载阶段就预取，
+      // 否则第一次点击时 1.5s 的停留窗口会在图片下载完成前结束，用户看不到动作。
+      for (const src of cfg.frames.slice(1)) {
+        const preload = new Image();
+        preload.decoding = 'async';
+        preload.src = src;
+        this.preloads.push(preload);
+      }
     }
   }
 

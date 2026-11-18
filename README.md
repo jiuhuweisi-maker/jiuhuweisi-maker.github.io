@@ -84,7 +84,7 @@ git add .github/workflows/deploy.yml && git commit -m "Enable Actions deploy" &&
 
 `public/images/frames/` 目前只有 `cat-rest.png`（常驻 idle，全透明）与 `cat-open.png`（睁眼 + 动耳）；`FRAME_ASSETS` 里只有 `cat` 配了这两帧，dragon / whale / plate 保持留空 = 原始静态图。
 
-`TavernFrames` 控制器按状态驱动，不做无限轮播：图层插在 `.scene-frame__art` 内部并继承底图的 `sceneBreathe` 呼吸动画，CSS 再补上与 `picture` 相同的 `scale(1.02)` + `--px/--py` 视差变换，保证逐像素对齐、不漂移、不闪烁。点击猫咪播放一次动作帧后 `frameHoldMs`（1500ms）自动回 idle；重复触发先撤销旧定时器，不叠加。`reduced-motion` / 后台标签页直接跳过。
+`TavernFrames` 控制器按状态驱动，不做无限轮播：图层插在 `.scene-frame__art` 内部并继承底图的 `sceneBreathe` 呼吸动画，CSS 再补上与 `picture` 相同的 `scale(1.02)` + `--px/--py` 视差变换，保证逐像素对齐、不漂移、不闪烁。动作帧在页面加载阶段就预取（只有几 KB，避免慢链路下第一次点击赶不上 1.5s 停留窗口）。点击猫咪播放一次动作帧后 `frameHoldMs`（1500ms）自动回 idle；重复触发先撤销旧定时器，不叠加。`reduced-motion` / 后台标签页直接跳过。
 
 原图自带的白色 `Zzz` 气泡属于插画美术，无法在鲸戒醒来时单独隐藏；隐藏的只是叠加的暖金小 `z` 图层。要补齐剩下三个动作，需要画师按 `src/data/tavern.ts` 第 5 节的规格提供正式透明帧（1600×901、同一像素网格、每帧只画对应 bbox、RGBA）。
 
