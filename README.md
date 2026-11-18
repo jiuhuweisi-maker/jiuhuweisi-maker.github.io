@@ -32,3 +32,25 @@ npm run check    # Astro + TypeScript 检查
 - 传送门平台：`src/data/site.ts` 的 `socials`，只放真实存在的地址。
 - 酒馆伙伴：`src/data/companions.ts`，给角色加 `art`（`public/images/` 下的路径）即可把占位卡换成正式立绘；`lines` 是点击轮换的台词。
 - 首屏插画：`public/images/tavern-hero.webp`（桌面）与 `tavern-hero-sm.webp`（手机），`og-cover.webp` 是分享图。首屏主视觉用 eager 保证加载速度，角色立绘等其余图片用 lazy。
+
+## 当前部署状态（V1）
+
+站点由 GitHub Pages 从 `main` 分支的 `/docs` 目录静态发布；`docs/.nojekyll` 用来关掉 Jekyll，保证 `_astro/` 里的 CSS 与字体不被吞掉。`public/CNAME`、`docs/CNAME` 与仓库根目录 `CNAME` 都保留 `jiuhuweisi.me`。
+
+改完源码后更新线上：
+
+```bash
+npm run build
+rm -rf docs && cp -r dist docs && touch docs/.nojekyll
+git add -A && git commit -m "Update site" && git push origin main
+```
+
+`.github/workflows/deploy.yml` 的等价配置保存在仓库根目录的 `deploy-workflow.yml`。当前 GitHub CLI 的 OAuth token 缺少 `workflow` scope，无法直接推送到 `.github/workflows/`，所以 V1 暂用上面的 docs 静态发布。授权后切换到 Actions 自动构建：
+
+```bash
+gh auth refresh -h github.com -s workflow
+mkdir -p .github/workflows && cp deploy-workflow.yml .github/workflows/deploy.yml
+git add .github/workflows/deploy.yml && git commit -m "Enable Actions deploy" && git push origin main
+```
+
+然后在仓库 **Settings → Pages → Build and deployment** 把 Source 改成 **GitHub Actions**，之后每次 push 到 main 都会自动构建部署。
