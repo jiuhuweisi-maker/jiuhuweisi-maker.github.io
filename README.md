@@ -40,7 +40,7 @@ git add -A && git commit -m "Update site" && git push origin main
    ```
 3. 要重新启用自动部署，把 Source 改回 **GitHub Actions** 即可，工作流文件无需改动；必要时 `gh workflow run deploy.yml` 手动跑一次。
 
-`deploy-workflow.yml` 是同一份工作流的可读副本，改工作流时以 `.github/workflows/deploy.yml` 为准。切换 Source 前请先确认至少一次 workflow run 的 build job 全绿 —— `actions/deploy-pages` 要求 Pages 的 `build_type` 为 `workflow`，在 legacy 模式下 deploy job 必然失败（构建与产物校验仍可通过）。
+`deploy-workflow.yml` 是同一份工作流的可读副本，改工作流时以 `.github/workflows/deploy.yml` 为准。2026-11-19 迁移记录：先推送工作流，确认 run `44369569106`（push 触发）的 build 与 deploy 全部通过后，才用 `PUT /repos/{owner}/{repo}/pages` 把 `build_type` 切为 `workflow`；切换时显式带上 `cname: "jiuhuweisi.me"`，域名未丢失。随后 run `44370062857`（手动触发）再次全绿，桌面 / 手机端 HTTPS、BGM、三角色互动与猫咪帧切换逐项验收通过。
 
 自定义域名证书状态见文末「HTTPS 状态」。
 
@@ -114,7 +114,8 @@ git add -A && git commit -m "Update site" && git push origin main
 
 - DNS A 记录指向 GitHub Pages 的 `185.199.108.153` 等 IP；无 AAAA、无 CAA 限制；`bridge.jiuhuweisi.me` 是独立解析，**从未改动**。
 - **证书已签发**：Let's Encrypt（`CN=jiuhuweisi.me`，SAN 含 `jiuhuweisi.me`），有效期 2026-11-18 16:46 UTC → 2027-02-16。直连四个 Pages IP 的正常 TLS 校验全部通过（TLS 1.3），浏览器侧主文档 `securityDetails` 主机名匹配、无 `certificateError` 事件。
-- Pages 配置已是 `https_enforced: true`，`http://jiuhuweisi.me/` 返回 301 → `https://jiuhuweisi.me/`；`pages/health` 显示 `https_error: null` / `responds_to_https: true` / `is_https_eligible: true`。
+- **2026-11-19 切到 GitHub Actions 后复核**：`https://jiuhuweisi.me/` 严格 TLS 校验 200、证书主机名匹配、浏览器侧 0 个 `Security.certificateError`，`CNAME` / `_astro` 的 JS 与 CSS / BGM / 猫咪帧 / 头图全部 200，控制台 0 错误。但此时 Pages 证书状态为 `dns_changed`（`Detected a change to DNS settings. Requesting a new certificate.`），`https_enforced` 回落为 `false`，`http://` 暂时不再 301 跳转。尝试通过 API 恢复 Enforce HTTPS 被 GitHub 拒绝：`The certificate has not finished being issued`（HTTP 404）。这是 GitHub 侧证书重签流程，**未改 DNS、未删 CNAME、未替换证书**，等签发完成后开关会自动可用；HTTPS 本身一直正常可用。
+- 历史记录：证书刚签发时 Pages 配置是 `https_enforced: true`，`http://jiuhuweisi.me/` 返回 301 → `https://jiuhuweisi.me/`；`pages/health` 显示 `https_error: null` / `responds_to_https: true` / `is_https_eligible: true`。
 - 之前排查时的「不安全 / Hostname mismatch」是**证书尚未签发阶段**的现象：当时服务端只发 `*.github.io` 通配证书。现在若浏览器仍提示不安全，优先清掉旧标签页与证书错误缓存（或本机代理 `127.0.0.1:56948` 的中间证书缓存），而不是改 DNS 或换证书。
 - 站内没有任何 `http://` 子资源，外链全部 `https://`，不存在混合内容。本轮**未改 DNS、未删 CNAME、未替换证书、未手动切换 Enforce HTTPS**。
 
