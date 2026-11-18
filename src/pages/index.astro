@@ -1,0 +1,22 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import SiteHeader from '../components/SiteHeader.astro';
+import Hero from '../components/Hero.astro';
+import QuestBoard from '../components/QuestBoard.astro';
+import AboutPanel from '../components/AboutPanel.astro';
+import Companions from '../components/Companions.astro';
+import Portals from '../components/Portals.astro';
+import SiteFooter from '../components/SiteFooter.astro';
+---
+
+<BaseLayout>
+  <SiteHeader />
+  <main id="main">
+    <Hero />
+    <QuestBoard />
+    <AboutPanel />
+    <Companions />
+    <Portals />
+  </main>
+  <SiteFooter />
+</BaseLayout>

@@ -1,0 +1,73 @@
+---
+import PixelIcon from './PixelIcon.astro';
+import { STATUS_META, type Project } from '../data/projects';
+
+interface Props {
+  project: Project;
+  index: number;
+}
+
+const { project: p, index } = Astro.props;
+const status = STATUS_META[p.status];
+const linked = Boolean(p.url);
+---
+
+<article
+  class:list={['quest-card', `accent-${p.accent}`, linked ? 'is-linked' : 'is-locked']}
+  data-category={p.category}
+  data-reveal
+  style={`--delay:${(index % 3) * 70}ms`}
+>
+  <span class="quest-card__pin" aria-hidden="true"></span>
+  <span class="quest-card__select" aria-hidden="true">▶</span>
+
+  <div class="quest-card__top">
+    <span class="quest-card__icon"><PixelIcon name={p.icon} size={44} /></span>
+    <span class:list={['status-badge', `status-${p.status}`]} title={status.hint}>{status.label}</span>
+  </div>
+
+  <p class="quest-card__en">{p.en}</p>
+  <h3 class="quest-card__title">{p.name}</h3>
+  <p class="quest-card__desc">{p.description}</p>
+
+  <ul class="tag-list" aria-label="项目标签">
+    {p.tags.map((tag) => <li>{tag}</li>)}
+  </ul>
+
+  {p.note && <p class="quest-card__note">「{p.note}」</p>}
+
+  <div class="quest-card__footer">
+    {linked ? (
+      <Fragment>
+        <a class="btn btn--small btn--primary quest-card__cta" href={p.url} target="_blank" rel="noopener noreferrer">
+          访问项目 <span aria-hidden="true">▶</span>
+        </a>
+        {p.repo && (
+          <a
+            class="repo-link"
+            href={p.repo}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={`打开 ${p.name} 的 GitHub 仓库`}
+            title="GitHub 仓库"
+          >
+            <PixelIcon name="github" size={20} />
+            <span>GitHub</span>
+          </a>
+        )}
+      </Fragment>
+    ) : (
+      <span class="btn btn--small is-disabled" aria-disabled="true">暂无公开链接</span>
+    )}
+  </div>
+
+  {linked && (
+    <a
+      class="quest-card__cover"
+      href={p.url}
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label={`访问项目：${p.name}`}
+    ></a>
+  )}
+</article>

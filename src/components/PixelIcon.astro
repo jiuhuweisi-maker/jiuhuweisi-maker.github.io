@@ -1,0 +1,46 @@
+---
+import { GRID, ICON_PALETTE, ICONS, validateIcons, type IconName } from '../data/icons';
+
+interface Props {
+  name: IconName;
+  size?: number;
+  class?: string;
+}
+
+validateIcons();
+const { name, size = 48, class: className = '' } = Astro.props;
+const rows = ICONS[name];
+if (!rows) throw new Error(`Unknown pixel icon: ${name}`);
+
+/* Merge horizontal runs into one path per colour: a 12x12 sprite renders as
+   ~4 <path> nodes instead of ~100 <rect> nodes, which keeps the HTML small. */
+const paths = new Map<string, string>();
+rows.forEach((row, y) => {
+  let x = 0;
+  while (x < GRID) {
+    const ch = row[x];
+    if (ch === '.') {
+      x += 1;
+      continue;
+    }
+    let run = 1;
+    while (x + run < GRID && row[x + run] === ch) run += 1;
+    const d = `M${x} ${y}h${run}v1h-${run}z`;
+    paths.set(ch, (paths.get(ch) ?? '') + d);
+    x += run;
+  }
+});
+const shapes = [...paths.entries()].map(([ch, d]) => ({ fill: ICON_PALETTE[ch], d }));
+---
+
+<svg
+  class:list={['pixel-icon', className]}
+  viewBox={`0 0 ${GRID} ${GRID}`}
+  width={size}
+  height={size}
+  shape-rendering="crispEdges"
+  aria-hidden="true"
+  focusable="false"
+>
+  {shapes.map(({ fill, d }) => <path d={d} fill={fill} />)}
+</svg>

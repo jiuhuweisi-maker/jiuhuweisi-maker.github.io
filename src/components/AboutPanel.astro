@@ -1,0 +1,54 @@
+---
+import PixelIcon from './PixelIcon.astro';
+import { interests } from '../data/site';
+---
+
+<section class="section about" id="about" aria-labelledby="about-title">
+  <div class="container">
+    <header class="section-head" data-reveal>
+      <p class="section-kicker"><span class="kicker-num">02</span> SAVE FILE</p>
+      <h2 class="section-title" id="about-title">店主档案<span class="section-title__en">CHARACTER SHEET</span></h2>
+      <p class="section-desc">一张 RPG 角色属性页，不过上面写的都是真的。</p>
+    </header>
+
+    <div class="sheet" data-reveal>
+      <div class="sheet__side">
+        <div class="sheet__portrait">
+          <PixelIcon name="mug" size={92} />
+          <span class="sheet__portrait-label">CREST / 徽章</span>
+        </div>
+        <p class="sheet__online"><i aria-hidden="true"></i> 在线折腾中</p>
+        <p class="sheet__sidenote">「想到什么，就先做出来再说。」</p>
+      </div>
+
+      <div class="sheet__body">
+        <div class="sheet__row">
+          <span class="sheet__key">NAME</span>
+          <strong class="sheet__name">Bistro</strong>
+        </div>
+        <div class="sheet__row">
+          <span class="sheet__key">CLASS</span>
+          <span>普通玩家 / 喜欢动手的人</span>
+        </div>
+        <div class="sheet__row">
+          <span class="sheet__key">STATUS</span>
+          <span>正在把想法做成能运行的东西</span>
+        </div>
+
+        <p class="sheet__bio">
+          一名喜欢折腾 AI、代码、游戏和新技术的普通玩家。<br />
+          正在尝试把各种有趣的想法做成真正能运行的东西。
+        </p>
+
+        <div class="sheet__skills">
+          <p class="sheet__label">兴趣 / INTERESTS</p>
+          <ul class="tag-list tag-list--dark" aria-label="兴趣标签">
+            {interests.map((item) => <li><span aria-hidden="true">✦</span> {item}</li>)}
+          </ul>
+        </div>
+
+        <p class="sheet__meta">※ 档案里没有头衔和履历，只有还在继续的兴趣。</p>
+      </div>
+    </div>
+  </div>
+</section>

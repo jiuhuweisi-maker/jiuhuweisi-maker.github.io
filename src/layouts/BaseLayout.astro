@@ -1,0 +1,209 @@
+---
+import '@fontsource/press-start-2p/latin-400.css';
+import '@fontsource/vt323/latin-400.css';
+import '../styles/global.css';
+import { site } from '../data/site';
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const { title = site.title, description = site.description } = Astro.props;
+const canonical = new URL(Astro.url.pathname, site.domain).href;
+const ogImage = new URL(site.ogImage, site.domain).href;
+---
+
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#1b1436" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta name="author" content="Bistro" />
+    <link rel="canonical" href={canonical} />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={site.name} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:alt" content="Bistro's Tavern 像素风酒馆插画" />
+    <meta property="og:locale" content="zh_CN" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImage} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/favicon.svg" />
+    <script type="application/ld+json" is:inline>
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "Bistro's Tavern",
+        "url": "https://jiuhuweisi.me",
+        "description": "Bistro 的像素风小酒馆：AI 实验、代码、游戏和奇怪想法的冒险委托板。",
+        "inLanguage": "zh-CN",
+        "author": { "@type": "Person", "name": "Bistro", "url": "https://github.com/jiuhuweisi-maker" }
+      }
+    </script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">跳到主要内容</a>
+    <div class="pixel-stars" aria-hidden="true">
+      <i style="--x:8%;--y:12%;--d:0s"></i>
+      <i style="--x:19%;--y:31%;--d:1.4s"></i>
+      <i style="--x:29%;--y:8%;--d:2.2s"></i>
+      <i style="--x:41%;--y:22%;--d:.7s"></i>
+      <i style="--x:53%;--y:6%;--d:1.9s"></i>
+      <i style="--x:66%;--y:27%;--d:.3s"></i>
+      <i style="--x:77%;--y:11%;--d:2.7s"></i>
+      <i style="--x:88%;--y:33%;--d:1.1s"></i>
+      <i style="--x:94%;--y:16%;--d:2s"></i>
+      <i style="--x:35%;--y:42%;--d:3.1s"></i>
+    </div>
+
+    <slot />
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+    <script is:inline>
+      (() => {
+        const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+        /* ---- mobile nav ---- */
+        const toggle = document.getElementById('nav-toggle');
+        const nav = document.getElementById('primary-nav');
+        const closeNav = () => {
+          nav?.classList.remove('is-open');
+          toggle?.setAttribute('aria-expanded', 'false');
+          document.body.classList.remove('nav-open');
+        };
+        toggle?.addEventListener('click', () => {
+          const open = !nav?.classList.contains('is-open');
+          nav?.classList.toggle('is-open', open);
+          toggle.setAttribute('aria-expanded', String(open));
+          document.body.classList.toggle('nav-open', open);
+        });
+        nav?.querySelectorAll('a').forEach((a) => a.addEventListener('click', closeNav));
+
+        /* ---- scroll progress + back to top ---- */
+        const progress = document.getElementById('scroll-progress-bar');
+        const toTop = document.getElementById('back-to-top');
+        const onScroll = () => {
+          const max = document.documentElement.scrollHeight - window.innerHeight;
+          const ratio = max > 0 ? Math.min(1, window.scrollY / max) : 0;
+          if (progress) progress.style.transform = `scaleX(${ratio})`;
+          toTop?.classList.toggle('is-visible', window.scrollY > 420);
+        };
+        window.addEventListener('scroll', onScroll, { passive: true });
+        onScroll();
+        toTop?.addEventListener('click', () =>
+          window.scrollTo({ top: 0, behavior: reduced ? 'auto' : 'smooth' })
+        );
+
+        /* ---- light reveal on scroll ---- */
+        const revealables = document.querySelectorAll('[data-reveal]');
+        if (reduced || !('IntersectionObserver' in window)) {
+          revealables.forEach((el) => el.classList.add('is-visible'));
+        } else {
+          const io = new IntersectionObserver(
+            (entries) => {
+              entries.forEach((entry) => {
+                if (entry.isIntersecting) {
+                  entry.target.classList.add('is-visible');
+                  io.unobserve(entry.target);
+                }
+              });
+            },
+            { rootMargin: '0px 0px -8% 0px', threshold: 0.06 }
+          );
+          revealables.forEach((el) => io.observe(el));
+        }
+
+        /* ---- quest board filters ---- */
+        const filterButtons = document.querySelectorAll('[data-filter]');
+        const cards = document.querySelectorAll('[data-category]');
+        const count = document.getElementById('quest-count');
+        filterButtons.forEach((btn) => {
+          btn.addEventListener('click', () => {
+            const filter = btn.getAttribute('data-filter');
+            filterButtons.forEach((b) => {
+              b.classList.toggle('is-active', b === btn);
+              b.setAttribute('aria-pressed', String(b === btn));
+            });
+            let shown = 0;
+            cards.forEach((card) => {
+              const match = filter === 'all' || card.getAttribute('data-category') === filter;
+              card.classList.toggle('is-hidden', !match);
+              if (match) shown += 1;
+            });
+            if (count) count.textContent = String(shown);
+          });
+        });
+
+        /* ---- companion dialogue ---- */
+        document.querySelectorAll('[data-companion]').forEach((card) => {
+          const lines = JSON.parse(card.getAttribute('data-lines') || '[]');
+          const output = card.querySelector('[data-line]');
+          let index = 0;
+          const advance = () => {
+            if (!lines.length || !output) return;
+            index = (index + 1) % lines.length;
+            output.textContent = lines[index];
+            card.classList.remove('is-talking');
+            void card.offsetWidth;
+            card.classList.add('is-talking');
+          };
+          card.addEventListener('click', advance);
+          card.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              advance();
+            }
+          });
+        });
+
+        /* ---- toast + easter eggs ---- */
+        const toast = document.getElementById('toast');
+        let toastTimer;
+        const say = (text) => {
+          if (!toast) return;
+          toast.textContent = text;
+          toast.classList.add('is-visible');
+          clearTimeout(toastTimer);
+          toastTimer = setTimeout(() => toast.classList.remove('is-visible'), 3600);
+        };
+        document.getElementById('secret-cat')?.addEventListener('click', () =>
+          say('吧台上的猫：「喵。」（它把爪子搭在了键盘上）')
+        );
+        const sign = document.getElementById('tavern-sign');
+        let signClicks = 0;
+        sign?.addEventListener('click', () => {
+          signClicks += 1;
+          if (signClicks === 3) {
+            say('★ 隐藏记录：酒馆的灯，是给晚归的冒险者留的。');
+            sign.classList.add('is-sparkling');
+          } else if (signClicks < 3) {
+            say('招牌轻轻晃了一下……');
+          }
+        });
+
+        /* ---- konami code ---- */
+        const sequence = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
+        let cursor = 0;
+        document.addEventListener('keydown', (e) => {
+          const key = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+          cursor = key === sequence[cursor] ? cursor + 1 : key === sequence[0] ? 1 : 0;
+          if (cursor === sequence.length) {
+            cursor = 0;
+            document.body.classList.toggle('secret-mode');
+            say(document.body.classList.contains('secret-mode') ? '★ 秘技生效：今夜全场热可可半价（并不收费）。' : '★ 秘技关闭，酒馆恢复正常。');
+          }
+        });
+      })();
+    </script>
+  </body>
+</html>

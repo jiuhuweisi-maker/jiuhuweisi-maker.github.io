@@ -1,0 +1,39 @@
+---
+import QuestCard from './QuestCard.astro';
+import { CATEGORY_META, projects } from '../data/projects';
+---
+
+<section class="section quests" id="quests" aria-labelledby="quests-title">
+  <div class="container">
+    <header class="section-head" data-reveal>
+      <p class="section-kicker"><span class="kicker-num">01</span> QUEST BOARD</p>
+      <h2 class="section-title" id="quests-title">冒险委托板<span class="section-title__en">ADVENTURE REQUESTS</span></h2>
+      <p class="section-desc">店主折腾过的东西都钉在这块木板上。挑一张看看，点卡片就能直达真实项目。</p>
+    </header>
+
+    <div class="quest-board" data-reveal>
+      <div class="quest-board__bar">
+        <span class="board-label">✦ 委托一览</span>
+        <div class="quest-filters" role="group" aria-label="按类别筛选项目">
+          {CATEGORY_META.map((c, i) => (
+            <button
+              type="button"
+              class:list={['filter-chip', i === 0 && 'is-active']}
+              data-filter={c.id}
+              aria-pressed={i === 0 ? 'true' : 'false'}
+            >{c.label}</button>
+          ))}
+        </div>
+        <span class="board-count">显示 <b id="quest-count">{projects.length}</b> / {projects.length} 份</span>
+      </div>
+
+      <div class="quest-grid">
+        {projects.map((project, index) => <QuestCard project={project} index={index} />)}
+      </div>
+
+      <p class="quest-board__foot">
+        ※ 只收录真实公开的仓库；未公开的项目只留介绍与状态，不放失效链接。木板上还空着位置，以后继续钉新委托。
+      </p>
+    </div>
+  </div>
+</section>

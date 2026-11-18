@@ -1,0 +1,71 @@
+---
+import PixelIcon from './PixelIcon.astro';
+---
+
+<section class="hero" id="home" aria-labelledby="hero-title">
+  <div class="hero__sky" aria-hidden="true">
+    <span class="hero__moon"><PixelIcon name="moon" size={62} /></span>
+    <span class="hero__star" style="--x:12%;--y:18%;--d:.4s"></span>
+    <span class="hero__star" style="--x:27%;--y:9%;--d:1.6s"></span>
+    <span class="hero__star" style="--x:63%;--y:14%;--d:2.4s"></span>
+    <span class="hero__star" style="--x:81%;--y:7%;--d:.9s"></span>
+    <span class="hero__star" style="--x:92%;--y:26%;--d:1.9s"></span>
+  </div>
+
+  <div class="container hero__inner">
+    <div class="hero__intro" data-reveal>
+      <p class="eyebrow"><PixelIcon name="star" size={14} /> 互联网角落 · 今晚也营业 <PixelIcon name="star" size={14} /></p>
+
+      <div class="sign" id="tavern-sign" title="……招牌好像可以敲一敲">
+        <span class="sign__chain sign__chain--l" aria-hidden="true"></span>
+        <span class="sign__chain sign__chain--r" aria-hidden="true"></span>
+        <div class="sign__board">
+          <span class="sign__tiny">✦ WELCOME TO ✦</span>
+          <h1 class="sign__title" id="hero-title">Bistro's<br /><span>Tavern</span></h1>
+          <span class="sign__tiny sign__tiny--bottom">酒 馆 · EST. 2026</span>
+        </div>
+      </div>
+
+      <p class="hero__lead">
+        欢迎来到我的小酒馆。<br />
+        这里收留一些 AI 实验、代码、游戏，以及突然冒出来的奇怪想法。
+      </p>
+
+      <div class="hero__actions">
+        <a class="btn btn--primary" href="#quests">进入项目区 <span class="btn__arrow" aria-hidden="true">▶</span></a>
+        <a class="btn btn--ghost" href="#about">关于店主</a>
+      </div>
+      <p class="hero__hint">↓ 往下走，委托板上钉着正在折腾的东西</p>
+    </div>
+
+    <div class="hero__scene" data-reveal>
+      <span class="lantern lantern--left" aria-hidden="true"><i></i></span>
+      <span class="lantern lantern--right" aria-hidden="true"><i></i></span>
+      <div class="scene-frame">
+        <picture>
+          <source media="(max-width: 720px)" srcset="/images/tavern-hero-sm.webp" />
+          <img
+            src="/images/tavern-hero.webp"
+            width="1600"
+            height="901"
+            alt="像素风酒馆夜景：发光的 Bistro's Tavern 木招牌、暖色吊灯与木质吧台，龙娘与蓝发 AI 少女坐在吧台边，桌上有酒杯、笔记本电脑、甜点和睡着的小猫"
+            loading="eager"
+            fetchpriority="high"
+            decoding="async"
+          />
+        </picture>
+        <span class="scene-frame__glare" aria-hidden="true"></span>
+        <button class="scene-cat" id="secret-cat" type="button" aria-label="摸摸吧台上的猫">
+          <PixelIcon name="cat" size={22} />
+        </button>
+      </div>
+      <p class="scene-caption"><span class="scene-caption__tag">NOW OPEN</span> 今晚也营业中，请随意找个位置坐下。</p>
+    </div>
+  </div>
+
+  <div class="hero__bar" aria-hidden="true">
+    <span>✦ 今日推荐：热可可 / 新点子</span>
+    <span>✦ 店主：Bistro</span>
+    <span>✦ 委托板已更新 9 份</span>
+  </div>
+</section>

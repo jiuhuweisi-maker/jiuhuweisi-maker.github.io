@@ -1,0 +1,43 @@
+---
+import PixelIcon from './PixelIcon.astro';
+import { socials } from '../data/site';
+---
+
+<section class="section portals" id="portals" aria-labelledby="portals-title">
+  <div class="container">
+    <header class="section-head" data-reveal>
+      <p class="section-kicker"><span class="kicker-num">04</span> WARP GATES</p>
+      <h2 class="section-title" id="portals-title">传送门<span class="section-title__en">LEAVE THE TAVERN</span></h2>
+      <p class="section-desc">要出门了？地图上的门都通向真实存在的地方，会在新标签页打开。</p>
+    </header>
+
+    <div class="portal-grid">
+      {socials.map((s) => (
+        <a
+          class:list={['portal-card', `accent-${s.accent}`]}
+          href={s.href}
+          target="_blank"
+          rel="noopener noreferrer"
+          data-reveal
+          aria-label={`前往 ${s.label} ${s.handle}（新标签页打开）`}
+        >
+          <span class="portal-card__gate" aria-hidden="true">
+            <PixelIcon name="portal" size={70} />
+            <span class="portal-card__icon"><PixelIcon name={s.icon} size={26} /></span>
+          </span>
+          <span class="portal-card__text">
+            <span class="portal-card__en">WARP / {s.id.toUpperCase()}</span>
+            <strong class="portal-card__title">{s.label}</strong>
+            <span class="portal-card__handle">{s.handle}</span>
+            <span class="portal-card__desc">{s.description}</span>
+          </span>
+          <span class="portal-card__go">出发 ↗</span>
+        </a>
+      ))}
+    </div>
+
+    <p class="section-note" data-reveal>
+      以后加平台：在 <code>src/data/site.ts</code> 的 <code>socials</code> 里加一项，门会自动出现；没有真实地址就不显示按钮。
+    </p>
+  </div>
+</section>
