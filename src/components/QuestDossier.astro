@@ -1,0 +1,71 @@
+---
+import PixelIcon from './PixelIcon.astro';
+import { STATUS_META, type Project } from '../data/projects';
+
+interface Props {
+  project: Project;
+}
+
+const { project: p } = Astro.props;
+const d = p.detail!;
+const status = STATUS_META[p.status];
+---
+
+<article class="quest-dossier" id={`dossier-${p.id}`} data-category={p.category} data-reveal>
+  <header class="dossier__head">
+    <span class="dossier__icon"><PixelIcon name={p.icon} size={32} /></span>
+    <div class="dossier__ident">
+      <p class="dossier__en">{p.en} / DOSSIER</p>
+      <h4 class="dossier__title">{p.name}</h4>
+    </div>
+    <span class:list={['status-badge', `status-${p.status}`]} title={status.hint}>{status.label}</span>
+  </header>
+
+  <div class="dossier__body">
+    <section class="dossier__field">
+      <h5 class="dossier__key">▸ 解决什么问题</h5>
+      <p class="dossier__val">{d.problem}</p>
+    </section>
+
+    {d.stack && d.stack.length > 0 && (
+      <section class="dossier__field">
+        <h5 class="dossier__key">▸ 用到的东西</h5>
+        <ul class="dossier__chips" aria-label="技术栈">
+          {d.stack.map((s) => <li>{s}</li>)}
+        </ul>
+      </section>
+    )}
+
+    {d.state && (
+      <section class="dossier__field">
+        <h5 class="dossier__key">▸ 当前状态</h5>
+        <p class="dossier__val">{d.state}</p>
+      </section>
+    )}
+
+    {d.areas && d.areas.length > 0 && (
+      <section class="dossier__field">
+        <h5 class="dossier__key">▸ 实验方向 · {d.areas.length} 条</h5>
+        <ol class="dossier__areas">
+          {d.areas.map((area) => <li>{area}</li>)}
+        </ol>
+      </section>
+    )}
+  </div>
+
+  {(p.repo || (d.links && d.links.length > 0)) && (
+    <footer class="dossier__foot">
+      {p.repo && (
+        <a class="btn btn--small btn--primary dossier__repo" href={p.repo} target="_blank" rel="noopener noreferrer">
+          <PixelIcon name="github" size={20} />
+          <span>GitHub</span>
+        </a>
+      )}
+      {d.links?.map((link) => (
+        <a class="dossier__link" href={link.href} target="_blank" rel="noopener noreferrer">
+          {link.label} <span aria-hidden="true">↗</span>
+        </a>
+      ))}
+    </footer>
+  )}
+</article>

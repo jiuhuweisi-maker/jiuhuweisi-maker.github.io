@@ -1,6 +1,9 @@
 ---
 import QuestCard from './QuestCard.astro';
+import QuestDossier from './QuestDossier.astro';
 import { CATEGORY_META, projects } from '../data/projects';
+
+const detailed = projects.filter((p) => p.detail);
 ---
 
 <section class="section quests" id="quests" aria-labelledby="quests-title">
@@ -30,6 +33,19 @@ import { CATEGORY_META, projects } from '../data/projects';
       <div class="quest-grid">
         {projects.map((project, index) => <QuestCard project={project} index={index} />)}
       </div>
+
+      {detailed.length > 0 && (
+        <section class="quest-dossiers" id="quest-dossiers" aria-labelledby="dossiers-title" data-reveal>
+          <header class="dossiers__head">
+            <span class="dossiers__mark">✦ 委托详档</span>
+            <h3 id="dossiers-title">摊开来看看</h3>
+            <p>只写仓库里能查证的内容；没有公开截图、Demo 或运行数据的字段，这里一律不显示。</p>
+          </header>
+          <div class="dossiers__grid">
+            {detailed.map((project) => <QuestDossier project={project} />)}
+          </div>
+        </section>
+      )}
 
       <p class="quest-board__foot">
         ※ 只收录真实公开的仓库；未公开的项目只留介绍与状态，不放失效链接。木板上还空着位置，以后继续钉新委托。

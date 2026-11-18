@@ -216,6 +216,8 @@ export const TIMING = {
   whaleAwakeMs: 28000,
   /** 角色动画/状态复位的兜底时间 */
   stateResetMs: 2400,
+  /** 真实动作帧播放后，停留在最后一帧的时长（毫秒） */
+  frameHoldMs: 1500,
 } as const;
 
 /* ------------------------------------------------------------------ *
@@ -256,12 +258,17 @@ export const BGM = {
  * 是另一套「全身站姿立绘」，姿态与头图（坐姿 / 趴睡）完全不同，不能贴回头图当动作帧，
  * 否则会破坏构图与像素网格。
  *
- * 所以：眨眼、表情变化、转头、抬头、伸懒腰这类「真实动作」本轮**没有实现**，
- * 也绝不用 CSS 局部扭曲整张图去假装人物在动。本轮交付的是 A 类效果：
- * 点击热区 / RPG 对话框 / 状态牌 / 光效 / Zzz / 环境粒子 / 状态机。
+ * V1.3（2026-11-19）实测结论：只用《Character Animation Pack v1.0》做动作/时序参考，
+ * 从原头图局部生成透明帧，做了三轮「叠回原图、放大 5x」逐帧复核：
+ *   - 猫咪睁眼 + 动耳：不改动任何背景，329 个不透明像素，检查通过 → 已接入运行。
+ *   - 龙娘眨眼：紫瞳/眼线紧贴刘海，程序化擦除会留下紫色残影或粉色缺口 → 否决。
+ *   - 鲸戒睁眼：需要同时去掉原图自带的白色 ZzZ 气泡；三种背景修复方案都留下
+ *     云朵状描边或彩色噪点矩形 → 否决，保留原始静态图。
+ *   - 猫咪抬头（P1）：整幅横条上移会破坏吧台背景并产生接缝 → 否决。
+ * 没有通过复核的帧一概不上线，绝不带病发布或伪造动作。
  *
- * 下面是要真正做 B 类效果时需要的素材清单。拿到素材后只需把文件放进 public/images/frames/，
- * 在 FRAME_ASSETS 里填帧数组即可启用，运行时已预留帧图层渲染器（renderFrameLayers）。
+ * 所以要补齐剩下的 B 类真实动作，仍需要画师提供下列正式素材。拿到后把文件放进
+ * public/images/frames/，在 FRAME_ASSETS 填帧数组即可启用，运行时控制器已就绪。
  * 规格：
  *   - 与 tavern-hero.webp **完全同尺寸 1600×901**、同一像素网格、RGBA 透明背景；
  *   - 每帧只画该角色对应的 bbox 区域，其余全透明，作为覆盖层叠在原图上；
@@ -289,16 +296,27 @@ export const BGM = {
 
 export interface FrameLayer {
   actor: ActorId | 'plate';
-  /** 帧序列；空数组 = 未启用 */
+  /** 帧序列；frames[0] 是常驻 idle 帧，其余为一次性动作帧；空数组 = 未启用 */
   frames: string[];
-  /** 帧停留毫秒 */
+  /** 单帧停留毫秒 */
   frameMs: number;
 }
 
-/** 全部留空 = B 类效果未启用。填入路径即自动启用，不需要改运行时代码。 */
+/**
+ * V1.3：只有猫咪的「睁眼 + 动耳」通过逐帧复核，其余角色留空 = 保留原始静态图。
+ * 帧层与底图同尺寸、同一套呼吸缩放与视差变换，不会漂移；鼠标/触摸点击猫咪时
+ * 由 TavernFrames 控制器播放一次动作帧序列，结束后自动回到 idle。
+ */
 export const FRAME_ASSETS: FrameLayer[] = [
   { actor: 'plate', frames: [], frameMs: 0 },
   { actor: 'dragon', frames: [], frameMs: 140 },
   { actor: 'whale', frames: [], frameMs: 180 },
-  { actor: 'cat', frames: [], frameMs: 160 },
+  {
+    actor: 'cat',
+    frames: [
+      '/images/frames/cat-rest.png',
+      '/images/frames/cat-open.png',
+    ],
+    frameMs: 160,
+  },
 ];

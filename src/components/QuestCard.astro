@@ -59,6 +59,11 @@ const linked = Boolean(p.url);
     ) : (
       <span class="btn btn--small is-disabled" aria-disabled="true">暂无公开链接</span>
     )}
+    {p.detail && (
+      <a class="dossier-jump" href={`#dossier-${p.id}`} aria-label={`查看 ${p.name} 的委托详档`}>
+        详档 <span aria-hidden="true">▾</span>
+      </a>
+    )}
   </div>
 
   {linked && (

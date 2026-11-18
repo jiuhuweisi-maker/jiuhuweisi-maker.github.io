@@ -1,10 +1,11 @@
 /**
- * Bistro's Tavern V1.2 — 「活着的酒馆」统一运行时。
+ * Bistro's Tavern V1.2 — 「活着的酒馆」统一运行时（V1.3 增量：真实动作帧）。
  *
- * 一个模块同时管三件事，共享同一个 reduced-motion / visibility 开关：
+ * 一个模块同时管四件事，共享同一个 reduced-motion / visibility 开关：
  *   1. TavernAudio：正式 BGM（双实例交叉淡化循环）+ 可选角色音效 + 偏好持久化
  *   2. TavernLife ：三角色热区、RPG 对话框、独立状态、五组联动剧情（有限状态机）
- *   3. 环境层    ：光点、打烊灯光、Zzz 与睡眠联动、逐帧素材渲染器（当前未启用）
+ *   3. 环境层    ：光点、打烊灯光、Zzz 与睡眠联动
+ *   4. TavernFrames：状态驱动的透明帧控制器（只播放逐帧复核通过的素材）
  *
  * 所有内容（台词、剧情、热区、音乐参数、素材清单）都在 src/data/tavern.ts。
  * 本文件不 import 任何第三方库，也不改动原有交互脚本。
@@ -611,7 +612,7 @@ class TavernLife {
   private hiddenUnlocked = false;
   private hiddenPlayed = false;
 
-  constructor(private audio: TavernAudio) {
+  constructor(private audio: TavernAudio, private frames: TavernFrames | null) {
     this.frame = one('[data-scene]');
     this.dlg = one('[data-dialogue]');
     this.nameEl = one('[data-dlg-name]', this.dlg ?? document);
@@ -684,6 +685,7 @@ class TavernLife {
 
   private normalLine(id: ActorId, line: ActorLine): void {
     this.phase = 'line';
+    this.frames?.pulse(id);
     this.show(this.actorName(id), line, id);
     if (this.skipEl) this.skipEl.hidden = true;
     this.hide(TIMING.lineHold);
@@ -709,6 +711,8 @@ class TavernLife {
       const { item, index } = pick(pool, this.lastLine.whale);
       this.lastLine.whale = index;
       this.normalLine('whale', item);
+      // 将来补齐鲸戒透明帧后，清醒状态会常驻对应帧直到重新睡着
+      this.frames?.hold('whale', 1, TIMING.whaleAwakeMs);
     } else {
       const actor = ACTORS[1];
       const { item, index } = pick(actor.lines, this.lastLine.whale);
@@ -810,6 +814,7 @@ class TavernLife {
     this.beatIndex = index;
     const beat = this.storyQueue.beats[index];
     this.show(this.actorName(beat.actor), { text: beat.text, mood: beat.mood }, beat.actor, this.storyQueue.title);
+    if (beat.actor !== 'narrator') this.frames?.pulse(beat.actor);
     // 剧情里开口说话的鲸戒会短暂醒来
     if (beat.actor === 'whale' && !this.whaleAwake) {
       this.whaleAwake = true;
@@ -894,31 +899,77 @@ function ambientMotes(frame: HTMLElement | null): void {
 }
 
 /**
- * 真实动作（B 类效果）渲染器 —— 已实现，但因缺少透明逐帧素材而处于关闭状态。
- * 把素材放进 public/images/frames/ 并在 FRAME_ASSETS 填路径即自动启用：
- *   plate 帧替换底图，其余角色帧按 frameMs 轮播为覆盖层。
- * 现有头图是单张合成图，没有底图时**绝不用 CSS 局部扭曲假装人物在动**。
+ * V1.3 真实动作帧控制器 —— 状态驱动，不做无限轮播。
+ *
+ * 图层插在 .scene-frame__art 内部，因此继承底图的 sceneBreathe 呼吸动画；
+ * CSS 再补上与 picture 完全相同的 scale(1.02) + --px/--py 视差变换，
+ * 保证逐像素对齐、不漂移、不闪烁。只有配了 ≥2 帧的角色才会创建图层，
+ * 其余角色保持原始静态图，绝不用 CSS 扭曲伪造动作。
+ *
+ * pulse() 播放一次动作序列后回到 idle；重复触发先撤销旧定时器，不叠加动画。
+ * reduced-motion / 后台标签页直接跳过，不产生无意义轮询。
  */
-function renderFrameLayers(frame: HTMLElement | null): void {
-  if (!frame) return;
-  const plate = FRAME_ASSETS.find((f) => f.actor === 'plate');
-  const art = one<HTMLImageElement>('.scene-frame__art img', frame);
-  if (plate?.frames.length && art) art.src = plate.frames[0];
-  for (const layer of FRAME_ASSETS) {
-    if (layer.actor === 'plate' || !layer.frames.length) continue;
-    const img = document.createElement('img');
-    img.className = 'frame-layer';
-    img.dataset.frameActor = layer.actor;
-    img.alt = '';
-    img.decoding = 'async';
-    img.src = layer.frames[0];
-    frame.appendChild(img);
-    let i = 0;
-    window.setInterval(() => {
-      if (document.hidden || document.body.classList.contains('is-page-hidden')) return;
-      i = (i + 1) % layer.frames.length;
-      img.src = layer.frames[i];
-    }, layer.frameMs);
+class TavernFrames {
+  private layers = new Map<ActorId, HTMLImageElement>();
+  private timers = new Map<ActorId, number[]>();
+
+  constructor(frame: HTMLElement) {
+    const art = one<HTMLElement>('.scene-frame__art', frame);
+    const baseImg = one<HTMLImageElement>('.scene-frame__art img', frame);
+    const plate = FRAME_ASSETS.find((f) => f.actor === 'plate');
+    if (plate?.frames.length && baseImg) baseImg.src = plate.frames[0];
+    if (!art) return;
+    for (const cfg of FRAME_ASSETS) {
+      if (cfg.actor === 'plate' || cfg.frames.length < 2) continue;
+      const img = document.createElement('img');
+      img.className = 'frame-layer';
+      img.dataset.frameActor = cfg.actor;
+      img.alt = '';
+      img.decoding = 'async';
+      img.src = cfg.frames[0];
+      art.appendChild(img);
+      this.layers.set(cfg.actor as ActorId, img);
+    }
+  }
+
+  private cancel(actor: ActorId): void {
+    for (const id of this.timers.get(actor) ?? []) window.clearTimeout(id);
+    this.timers.set(actor, []);
+  }
+
+  private after(actor: ActorId, fn: () => void, ms: number): void {
+    const id = window.setTimeout(fn, ms);
+    const list = this.timers.get(actor) ?? [];
+    list.push(id);
+    this.timers.set(actor, list);
+  }
+
+  private set(actor: ActorId, src: string): void {
+    const img = this.layers.get(actor);
+    if (img && img.getAttribute('src') !== src) img.src = src;
+  }
+
+  /** 一次性动作帧；点击角色 / 剧情台词时触发 */
+  pulse(actor: ActorId): void {
+    const cfg = FRAME_ASSETS.find((f) => f.actor === actor);
+    const img = this.layers.get(actor);
+    if (!cfg || !img || cfg.frames.length < 2) return;
+    if (reducedMotion || document.hidden || document.body.classList.contains('is-page-hidden')) return;
+    this.cancel(actor);
+    const actions = cfg.frames.slice(1);
+    actions.forEach((src, i) => this.after(actor, () => this.set(actor, src), i * cfg.frameMs));
+    this.after(actor, () => this.set(actor, cfg.frames[0]),
+      actions.length * cfg.frameMs + TIMING.frameHoldMs);
+  }
+
+  /** 常驻某帧（鲸戒清醒等），到时自动回 idle */
+  hold(actor: ActorId, index: number, ms: number): void {
+    const cfg = FRAME_ASSETS.find((f) => f.actor === actor);
+    if (!cfg || !this.layers.has(actor) || cfg.frames.length < 2) return;
+    if (reducedMotion || document.hidden) return;
+    this.cancel(actor);
+    this.set(actor, cfg.frames[Math.min(index, cfg.frames.length - 1)]);
+    this.after(actor, () => this.set(actor, cfg.frames[0]), ms);
   }
 }
 
@@ -942,7 +993,8 @@ function boot(): void {
   const player = one<HTMLElement>('[data-player]');
   const audio = audioSingleton ?? new TavernAudio(player);
   audioSingleton = audio;
-  new TavernLife(audio);
+  const frames = frame ? new TavernFrames(frame) : null;
+  new TavernLife(audio, frames);
 
   if (frame && img) {
     const relayout = () => layoutZones(frame, img);
@@ -952,7 +1004,6 @@ function boot(): void {
     window.addEventListener('resize', relayout, { passive: true });
     if ('ResizeObserver' in window) new ResizeObserver(relayout).observe(frame);
     ambientMotes(frame);
-    renderFrameLayers(frame);
   }
 
   // V1.3：默认开启 BGM，首次进入尝试自动播放；被拦截则等第一次真实手势

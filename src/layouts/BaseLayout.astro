@@ -131,9 +131,11 @@ const ogImage = new URL(site.ogImage, site.domain).href;
           revealables.forEach((el) => io.observe(el));
         }
 
-        /* ---- quest board filters ---- */
+        /* ---- quest board filters（卡片与详档同步筛选，计数只算卡片） ---- */
         const filterButtons = document.querySelectorAll('[data-filter]');
-        const cards = document.querySelectorAll('[data-category]');
+        const cards = document.querySelectorAll('.quest-card[data-category]');
+        const dossiers = document.querySelectorAll('.quest-dossier[data-category]');
+        const dossierBox = document.getElementById('quest-dossiers');
         const count = document.getElementById('quest-count');
         filterButtons.forEach((btn) => {
           btn.addEventListener('click', () => {
@@ -148,6 +150,13 @@ const ogImage = new URL(site.ogImage, site.domain).href;
               card.classList.toggle('is-hidden', !match);
               if (match) shown += 1;
             });
+            let dossierShown = 0;
+            dossiers.forEach((dossier) => {
+              const match = filter === 'all' || dossier.getAttribute('data-category') === filter;
+              dossier.classList.toggle('is-hidden', !match);
+              if (match) dossierShown += 1;
+            });
+            if (dossierBox) dossierBox.classList.toggle('is-hidden', dossierShown === 0);
             if (count) count.textContent = String(shown);
           });
         });

@@ -454,7 +454,9 @@ code {
 /* ---------- hero ---------- */
 .hero {
   position: relative;
-  padding: 36px 0 0;
+  /* V1.3：招牌、说明、按钮、头图之间原有多处叠加留白，累计收掉约 30px，
+     让 16:9 头图在首屏多露一点；只改间距，不动任何比例或裁切方式。 */
+  padding: 28px 0 0;
 }
 .hero__sky {
   position: absolute;
@@ -486,7 +488,7 @@ code {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 24px;
+  gap: 18px;
 }
 .hero__intro {
   width: 100%;
@@ -498,7 +500,7 @@ code {
 .sign {
   position: relative;
   width: min(100%, 430px);
-  margin: 14px auto 20px;
+  margin: 10px auto 14px;
   padding: 6px;
   background: linear-gradient(180deg, var(--wood-2), var(--wood-0));
   border: 4px solid var(--ink);
@@ -554,7 +556,7 @@ code {
   margin: 0 auto;
   max-width: 580px;
   font-size: 15px;
-  line-height: 2;
+  line-height: 1.9;
   color: var(--cream-dim);
 }
 .hero__actions {
@@ -562,10 +564,10 @@ code {
   justify-content: center;
   flex-wrap: wrap;
   gap: 14px;
-  margin-top: 20px;
+  margin-top: 14px;
 }
 .hero__hint {
-  margin: 14px 0 0;
+  margin: 10px 0 0;
   font-size: 11.5px;
   letter-spacing: 0.08em;
   color: #9b8bb6;
@@ -1040,6 +1042,206 @@ code {
   font-size: 11px;
   line-height: 1.9;
   color: #f0d7ab;
+}
+
+/* ---------- quest dossiers（只有带 detail 的项目才会生成） ---------- */
+.dossier-jump {
+  position: relative;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  min-height: 40px;
+  padding: 6px 4px;
+  font-size: 11px;
+  font-weight: 800;
+  color: #6b4a2c;
+  text-decoration: none;
+  border-bottom: 2px dashed #b18b59;
+  transition: color 0.15s, border-color 0.15s;
+}
+.dossier-jump:hover,
+.dossier-jump:focus-visible {
+  color: #2f2019;
+  border-color: #2f2019;
+}
+.quest-dossiers {
+  margin-top: 28px;
+  padding-top: 22px;
+  border-top: 3px dashed rgba(255, 217, 138, 0.28);
+}
+.quest-dossiers.is-hidden,
+.quest-dossier.is-hidden {
+  display: none;
+}
+.dossiers__head {
+  margin-bottom: 18px;
+}
+.dossiers__mark {
+  display: inline-block;
+  margin-bottom: 8px;
+  font-family: var(--font-pixel);
+  font-size: 9px;
+  color: #ffdfa0;
+}
+.dossiers__head h3 {
+  margin: 0 0 6px;
+  font-family: var(--font-rpg);
+  font-size: 30px;
+  line-height: 1.2;
+  letter-spacing: 0.04em;
+  color: #fff0c2;
+}
+.dossiers__head p {
+  margin: 0;
+  font-size: 11.5px;
+  line-height: 1.8;
+  color: #e6cda4;
+}
+.dossiers__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: stretch;
+  gap: 18px;
+}
+.quest-dossier {
+  display: flex;
+  flex-direction: column;
+  padding: 16px 16px 14px;
+  background: linear-gradient(180deg, #241b45 0%, #1a1433 100%);
+  border: 3px solid var(--ink);
+  box-shadow: 0 0 0 3px rgba(240, 182, 87, 0.35), 5px 6px 0 rgba(10, 7, 24, 0.5);
+  scroll-margin-top: 96px;
+}
+.dossier__head {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding-bottom: 12px;
+  border-bottom: 2px dashed rgba(255, 217, 138, 0.22);
+}
+.dossier__icon {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  background: #120e29;
+  border: 2px solid var(--amber);
+  --icon-a: var(--amber-soft);
+}
+.dossier__ident {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.dossier__en {
+  margin: 0 0 4px;
+  font-family: var(--font-pixel);
+  font-size: 6.5px;
+  line-height: 1.6;
+  letter-spacing: 0.05em;
+  color: #b9a6ef;
+}
+.dossier__title {
+  margin: 0;
+  font-size: 14.5px;
+  font-weight: 900;
+  line-height: 1.45;
+  color: #fff0c2;
+}
+.dossier__head .status-badge {
+  flex: 0 0 auto;
+  font-size: 10px;
+}
+.dossier__body {
+  flex: 1 1 auto;
+  padding: 4px 0 0;
+}
+.dossier__field {
+  padding: 11px 0;
+  border-bottom: 1px dotted rgba(255, 217, 138, 0.16);
+}
+.dossier__field:last-child {
+  border-bottom: none;
+}
+.dossier__key {
+  margin: 0 0 6px;
+  font-family: var(--font-rpg);
+  font-size: 17px;
+  line-height: 1.3;
+  letter-spacing: 0.05em;
+  color: var(--amber);
+}
+.dossier__val {
+  margin: 0;
+  font-size: 11.5px;
+  line-height: 1.85;
+  color: #ded0e8;
+}
+.dossier__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.dossier__chips li {
+  padding: 3px 7px;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #ffdfa0;
+  background: rgba(240, 182, 87, 0.12);
+  border: 1px solid rgba(240, 182, 87, 0.5);
+}
+.dossier__areas {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: none;
+}
+.dossier__areas li {
+  font-family: var(--font-rpg);
+  font-size: 15px;
+  line-height: 1.45;
+  letter-spacing: 0.02em;
+  color: #cfc2e6;
+}
+.dossier__foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin-top: 6px;
+  padding-top: 12px;
+  border-top: 2px dashed rgba(255, 217, 138, 0.22);
+}
+.dossier__repo {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  /* 图标主体默认 --icon-a 是琥珀色，与按钮底色同色会消失，这里改成深墨色 */
+  --icon-a: #3a281f;
+}
+.dossier__link {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--cyan);
+  text-decoration: none;
+  border-bottom: 1px dashed currentColor;
+}
+.dossier__link:hover,
+.dossier__link:focus-visible {
+  color: #fff0c2;
+}
+/* 卡片与详档共用焦点可见样式，键盘导航能看清落点 */
+.quest-board a:focus-visible,
+.quest-board button:focus-visible {
+  outline: 3px solid var(--amber);
+  outline-offset: 2px;
 }
 
 /* ---------- character sheet ---------- */
@@ -1579,6 +1781,7 @@ code {
 /* ---------- responsive ---------- */
 @media (max-width: 1040px) {
   .quest-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .dossiers__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .sheet { grid-template-columns: 220px 1fr; }
   .companion-grid, .portal-grid { gap: 18px; }
   .companion-card { grid-template-columns: minmax(0, 38%) minmax(0, 1fr); min-height: 340px; }
@@ -1626,8 +1829,8 @@ code {
   .container { width: min(100% - 28px, 1120px); }
   .section { padding: 56px 0; }
   .section-title { letter-spacing: 0.05em; }
-  .hero { padding-top: 34px; }
-  .sign { width: min(100%, 340px); margin-bottom: 20px; }
+  .hero { padding-top: 28px; }
+  .sign { width: min(100%, 340px); margin-bottom: 16px; }
   .sign__title { font-size: clamp(42px, 12vw, 60px); }
   .hero__lead { font-size: 13.5px; line-height: 1.9; }
   .hero__actions { gap: 10px; }
@@ -1645,6 +1848,8 @@ code {
   .hero__bar { justify-content: center; padding: 14px; gap: 4px 18px; }
   .quest-board { padding: 14px; }
   .quest-grid { grid-template-columns: 1fr; gap: 18px; }
+  .dossiers__grid { grid-template-columns: 1fr; gap: 16px; }
+  .dossier__areas { grid-template-columns: 1fr; }
   .quest-card { min-height: 0; }
   .quest-card__select { display: none; }
   .board-count { margin-left: auto; }
@@ -2024,16 +2229,19 @@ code {
 .is-page-hidden .lantern i,
 .is-page-hidden .hero__star { animation-play-state: paused; }
 
-/* ---- 逐帧素材启用时的覆盖层（当前 FRAME_ASSETS 为空，不产生任何节点） ---- */
+/* ---- V1.3 真实动作帧：与底图同一套变换，逐像素对齐、不漂移 ---- */
 .frame-layer {
   position: absolute;
   inset: 0;
-  z-index: 2;
+  z-index: 1;
   width: 100%;
   height: 100%;
   object-fit: cover;
   pointer-events: none;
   image-rendering: pixelated;
+  /* 父级 .scene-frame__art 承担 sceneBreathe 呼吸动画；这里补齐 picture 的
+     scale(1.02) + --px/--py 视差，保证帧层与底图严格同步 */
+  transform: scale(1.02) translate3d(calc(var(--px, 0) * 1px), calc(var(--py, 0) * 1px), 0);
 }
 
 /* ---------- reduced motion ---------- */
