@@ -12,27 +12,35 @@ npm run preview  # 预览构建结果
 npm run check    # Astro + TypeScript 检查
 ```
 
-## 部署
+## 部署（GitHub Actions 自动构建）
 
-站点由 GitHub Pages 从 `main` 分支的 `/docs` 目录静态发布；`docs/.nojekyll` 关掉 Jekyll，保证 `_astro/` 里的 CSS 与字体不被吞掉。`public/CNAME`、`docs/CNAME` 与仓库根目录 `CNAME` 都保留 `jiuhuweisi.me`，**任何时候都不要删**。
+站点由 `.github/workflows/deploy.yml` 在每次 push 到 `main` 时自动构建并部署；也可在 Actions 页用 `Run workflow` 手动触发。工作流顺序为 `npm ci` → `npm run check`（Astro + TypeScript）→ `npm run build` → 产物校验 → `actions/deploy-pages`，**任何一步失败都不会部署**，线上保持上一次成功的版本。
+
+自定义域名 `jiuhuweisi.me` 由 `public/CNAME` 构建进 `dist/CNAME`，切到 Actions 后不会掉；`public/.nojekyll` 保证 `_astro/` 里的 CSS 与字体不被 Jekyll 吞掉。工作流里有一条 `Verify deployment artifact` 断言，缺 `index.html` / `CNAME` / `.nojekyll` 会直接让构建失败。仓库根目录 `CNAME` 与 `docs/CNAME` 一并保留，**任何时候都不要删**。
 
 改完源码后更新线上：
 
 ```bash
-npm run build
-rm -rf docs && cp -r dist docs && touch docs/.nojekyll
+npm run check && npm run build   # 本地自检（可选，CI 会再跑一遍）
 git add -A && git commit -m "Update site" && git push origin main
 ```
 
-`deploy-workflow.yml` 是等价的 GitHub Actions 自动构建配置。当前 GitHub CLI 的 OAuth token 缺少 `workflow` scope，无法写 `.github/workflows/`，所以继续用 `/docs` 静态发布。授权后切换：
+**不需要再手工同步 `docs/`**：Actions 直接从 `dist/` 部署，旧的「构建产物提交」步骤已移除。
 
-```bash
-gh auth refresh -h github.com -s workflow
-mkdir -p .github/workflows && cp deploy-workflow.yml .github/workflows/deploy.yml
-git add .github/workflows/deploy.yml && git commit -m "Enable Actions deploy" && git push origin main
-```
+### 回滚到 legacy `/docs`
 
-再到仓库 **Settings → Pages → Build and deployment** 把 Source 改成 **GitHub Actions**。这一步只申请 `workflow` 一个 scope，不要申请更宽的权限；未授权前不要假装 Actions 已启用。
+`docs/` 保留着最后一次 `/docs` 静态发布的完整快照（含 `.nojekyll` 与 `CNAME`），**只作回滚备份**：CI 不读它、也不会更新它，因此它会逐渐落后于源码。若 Actions 出问题：
+
+1. 仓库 **Settings → Pages → Build and deployment → Source** 改回 **Deploy from a branch**，分支 `main`、目录 `/docs`，保存。站点立即回到旧发布模式。
+2. 若希望快照包含最新源码，先本地刷新再推送（这是唯一还需要写 `docs/` 的场景）：
+   ```bash
+   npm run build
+   rm -rf docs && cp -r dist docs && touch docs/.nojekyll
+   git add docs && git commit -m "Refresh legacy docs snapshot" && git push origin main
+   ```
+3. 要重新启用自动部署，把 Source 改回 **GitHub Actions** 即可，工作流文件无需改动；必要时 `gh workflow run deploy.yml` 手动跑一次。
+
+`deploy-workflow.yml` 是同一份工作流的可读副本，改工作流时以 `.github/workflows/deploy.yml` 为准。切换 Source 前请先确认至少一次 workflow run 的 build job 全绿 —— `actions/deploy-pages` 要求 Pages 的 `build_type` 为 `workflow`，在 legacy 模式下 deploy job 必然失败（构建与产物校验仍可通过）。
 
 自定义域名证书状态见文末「HTTPS 状态」。
 

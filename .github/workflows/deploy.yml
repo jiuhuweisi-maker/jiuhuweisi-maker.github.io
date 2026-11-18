@@ -1,0 +1,58 @@
+name: Deploy Bistro's Tavern to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.22.2
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Astro check
+        run: npm run check
+      - name: Build static site
+        run: npm run build
+      # 自定义域名与 Jekyll 开关必须进产物，否则切到 Actions 后会掉域名 / 吞掉 _astro 资源
+      - name: Verify deployment artifact
+        run: |
+          test -f dist/index.html
+          test -f dist/CNAME && grep -qx 'jiuhuweisi.me' dist/CNAME
+          test -f dist/.nojekyll
+          echo "Artifact OK: $(find dist -type f | wc -l) files"
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  # check / build / 产物校验任一失败即中止，线上保留上一次成功部署
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
