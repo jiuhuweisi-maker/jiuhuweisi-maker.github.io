@@ -1658,6 +1658,379 @@ code {
   .footer-inner { flex-direction: column; text-align: center; }
   .back-to-top { right: 14px; bottom: 14px; }
   .toast { bottom: 76px; }
+  .tavern-player { left: 12px; bottom: 14px; width: min(250px, calc(100vw - 24px)); }
+  .tavern-dialogue { bottom: 12px; grid-template-columns: 38px 1fr; gap: 10px; padding: 10px 12px; }
+  .tavern-dialogue__portrait { width: 38px; height: 38px; }
+  .tavern-dialogue__text { font-size: 13px; }
+  .tavern-dialogue__chapter { margin-left: 0; }
+  .tavern-dialogue__skip { grid-column: 2; justify-self: start; }
+  .actor-zone__tag { font-size: 7px; }
+}
+
+/* =========================================================
+   V1.2 · 活着的酒馆：环境光点 / 热区 / 对话框 / 像素点唱机
+   ========================================================= */
+
+/* ---- 环境光点：随机淡入淡出，只在可见画布内 ---- */
+.scene-motes {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  overflow: hidden;
+  pointer-events: none;
+}
+.scene-fx__mote {
+  position: absolute;
+  left: var(--x);
+  top: var(--y);
+  width: var(--s, 3px);
+  height: var(--s, 3px);
+  background: #ffe6b0;
+  box-shadow: 0 0 7px 2px rgba(255, 214, 140, 0.5);
+  opacity: 0;
+  animation: moteDrift var(--t, 9s) ease-in-out infinite;
+  animation-delay: var(--d, 0s);
+}
+@keyframes moteDrift {
+  0%, 100% { opacity: 0; transform: translateY(4px); }
+  25% { opacity: 0.55; }
+  60% { opacity: 0.26; transform: translateY(-9px); }
+  85% { opacity: 0; transform: translateY(-14px); }
+}
+
+/* ---- 状态联动：鲸戒清醒时 Zzz 收起，猫咪被逗时轻微高亮 ---- */
+.scene-fx__zzz { transition: opacity 0.6s; }
+.scene-frame.is-whale-awake .scene-fx__zzz { opacity: 0; }
+.scene-frame.is-cat-alert .actor-zone[data-actor-zone="cat"] {
+  border-color: rgba(255, 217, 138, 0.5);
+  background: rgba(255, 214, 140, 0.05);
+}
+
+/* ---- 深夜打烊：只压暗灯光，不模糊、不扭曲像素画 ---- */
+.scene-frame.is-closing .scene-fx__lamp,
+.scene-frame.is-closing .lantern i { animation: none; opacity: 0.24; }
+.scene-frame.is-closing .scene-fx__counter { animation: none; opacity: 0.07; }
+.scene-frame.is-closing .scene-fx__moon { animation-play-state: paused; opacity: 0.7; }
+.scene-frame.is-closing .scene-frame__glare {
+  background: linear-gradient(180deg, rgba(18, 14, 41, 0.3), rgba(18, 14, 41, 0.44));
+}
+
+/* ---- 三角色点击热区（坐标由 JS 按 object-fit 换算） ---- */
+.actor-zones {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+}
+.actor-zone {
+  position: absolute;
+  display: block;
+  margin: 0;
+  padding: 0;
+  border: 2px dashed transparent;
+  background: transparent;
+  color: var(--cream);
+  cursor: pointer;
+  pointer-events: auto;
+  -webkit-tap-highlight-color: transparent;
+  transition: border-color 0.16s, background 0.16s;
+}
+.actor-zone:hover,
+.actor-zone:focus-visible {
+  border-color: rgba(255, 217, 138, 0.72);
+  background: rgba(255, 214, 140, 0.06);
+  outline: none;
+}
+.actor-zone:focus-visible {
+  box-shadow: inset 0 0 0 2px var(--ink), 0 0 0 2px var(--amber);
+}
+.actor-zone__tag {
+  position: absolute;
+  left: 4px;
+  top: 4px;
+  display: none;
+  white-space: nowrap;
+  padding: 5px 8px;
+  font-family: var(--font-pixel);
+  font-size: 8px;
+  color: var(--ink);
+  background: var(--amber);
+  border: 2px solid var(--ink);
+  box-shadow: 0 3px 0 var(--ink);
+  pointer-events: none;
+}
+.actor-zone:hover .actor-zone__tag,
+.actor-zone:focus-visible .actor-zone__tag { display: block; }
+.scene-cat { z-index: 4; }
+.scene-caption__hint { color: var(--amber-soft); }
+
+/* ---- RPG 对话框：固定在视口底部，零布局偏移、不遮脸 ---- */
+.tavern-dialogue {
+  position: fixed;
+  left: 50%;
+  bottom: 18px;
+  z-index: 90;
+  display: grid;
+  grid-template-columns: 48px 1fr auto;
+  align-items: center;
+  gap: 14px;
+  width: min(720px, calc(100vw - 28px));
+  padding: 12px 14px;
+  background: linear-gradient(180deg, #2a2049, #1b1436);
+  border: 3px solid var(--amber);
+  box-shadow:
+    0 0 0 3px var(--ink),
+    0 8px 0 rgba(10, 7, 24, 0.6),
+    0 0 34px rgba(240, 182, 87, 0.18);
+  transform: translateX(-50%);
+}
+.tavern-dialogue[hidden] { display: none; }
+.tavern-dialogue.is-pop { animation: dialogueIn 0.2s steps(3, end) both; }
+@keyframes dialogueIn {
+  0% { opacity: 0.25; transform: translateX(-50%) translateY(8px); }
+  100% { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+.tavern-dialogue__portrait {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  background: var(--night-3);
+  border: 2px solid var(--ink);
+  --icon-a: var(--amber);
+}
+.tavern-dialogue__portrait span { display: none; }
+.tavern-dialogue__portrait[data-actor="dragon"] span[data-portrait="dragon"],
+.tavern-dialogue__portrait[data-actor="whale"] span[data-portrait="whale"],
+.tavern-dialogue__portrait[data-actor="cat"] span[data-portrait="cat"],
+.tavern-dialogue__portrait[data-actor="narrator"] span[data-portrait="narrator"] { display: block; }
+.tavern-dialogue__portrait[data-actor="whale"] { --icon-a: var(--cyan); }
+.tavern-dialogue__portrait[data-actor="cat"] { --icon-a: var(--cream); }
+.tavern-dialogue__portrait[data-actor="narrator"] { --icon-a: var(--lav); }
+.tavern-dialogue__body { min-width: 0; }
+.tavern-dialogue__head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px 10px;
+  margin-bottom: 5px;
+}
+.tavern-dialogue__name {
+  font-family: var(--font-pixel);
+  font-size: 9px;
+  color: var(--amber-soft);
+}
+.tavern-dialogue__mood,
+.tavern-dialogue__chapter {
+  font-family: var(--font-pixel);
+  font-size: 7px;
+  white-space: nowrap;
+}
+.tavern-dialogue__mood {
+  padding: 3px 6px;
+  color: var(--ink);
+  background: var(--lav);
+  border: 2px solid var(--ink);
+}
+.tavern-dialogue__chapter { margin-left: auto; color: var(--cyan); }
+.tavern-dialogue__text {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--cream);
+}
+.tavern-dialogue__skip {
+  align-self: start;
+  padding: 6px 9px;
+  font-family: var(--font-pixel);
+  font-size: 7px;
+  white-space: nowrap;
+  color: var(--ink);
+  background: var(--paper-2);
+  border: 2px solid var(--ink);
+  box-shadow: 0 3px 0 var(--ink);
+  cursor: pointer;
+}
+.tavern-dialogue__skip:hover { background: var(--amber); }
+.tavern-dialogue__mood[hidden],
+.tavern-dialogue__chapter[hidden],
+.tavern-dialogue__skip[hidden] { display: none; }
+
+/* ---- 迷你像素点唱机 ---- */
+.tavern-player {
+  position: fixed;
+  left: 18px;
+  bottom: 18px;
+  z-index: 70;
+  width: 262px;
+}
+.tavern-player__fab {
+  position: relative;
+  display: none;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  color: var(--amber);
+  background: var(--night-2);
+  border: 3px solid var(--amber);
+  box-shadow: 0 0 0 3px var(--ink), 0 5px 0 var(--ink);
+  cursor: pointer;
+  --icon-a: var(--amber);
+}
+.tavern-player__fab-note {
+  position: absolute;
+  right: -6px;
+  top: -10px;
+  font-size: 14px;
+  color: var(--amber-soft);
+}
+.tavern-player__fab-label {
+  position: absolute;
+  left: calc(100% + 7px);
+  top: 50%;
+  transform: translateY(-50%);
+  padding: 4px 6px;
+  font-family: var(--font-pixel);
+  font-size: 7px;
+  color: var(--ink);
+  background: var(--amber);
+  border: 2px solid var(--ink);
+  white-space: nowrap;
+}
+.tavern-player__panel {
+  padding: 10px 12px 12px;
+  background: linear-gradient(180deg, #2a2049, #1b1436);
+  border: 3px solid var(--amber);
+  box-shadow: 0 0 0 3px var(--ink), 0 6px 0 rgba(10, 7, 24, 0.6);
+}
+.tavern-player.is-collapsed .tavern-player__panel { display: none; }
+.tavern-player.is-collapsed .tavern-player__fab { display: grid; }
+.tavern-player audio { display: none; }
+.tavern-player__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 8px;
+  border-bottom: 2px dashed #4a3355;
+}
+.tavern-player__icon { display: grid; place-items: center; --icon-a: var(--amber); }
+.tavern-player__label {
+  font-family: var(--font-pixel);
+  font-size: 8px;
+  color: var(--amber-soft);
+}
+.tavern-player__collapse {
+  margin-left: auto;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  font-family: var(--font-pixel);
+  font-size: 9px;
+  color: var(--ink);
+  background: var(--paper-2);
+  border: 2px solid var(--ink);
+  cursor: pointer;
+}
+.tavern-player__collapse:hover { background: var(--amber); }
+.tavern-player__title { margin: 9px 0 2px; font-size: 13px; color: var(--cream); }
+.tavern-player__sub {
+  margin: 0 0 10px;
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  color: #9b8bb6;
+}
+.tavern-player__row { display: flex; align-items: center; gap: 10px; }
+.tavern-player__play {
+  flex: 0 0 42px;
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  font-family: var(--font-pixel);
+  font-size: 12px;
+  color: var(--ink);
+  background: var(--amber);
+  border: 2px solid var(--ink);
+  box-shadow: 0 3px 0 var(--ink);
+  cursor: pointer;
+}
+.tavern-player__play.is-playing { background: var(--lav); }
+.tavern-player__play:hover { filter: brightness(1.1); }
+.tavern-player__volume { flex: 1; min-width: 0; }
+.tavern-player__vol-label {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-pixel);
+  font-size: 7px;
+  color: var(--cream-dim);
+}
+.tavern-player__slider {
+  width: 100%;
+  height: 8px;
+  margin: 6px 0 0;
+  appearance: none;
+  background: var(--night-3);
+  border: 2px solid var(--ink);
+  cursor: pointer;
+}
+.tavern-player__slider::-webkit-slider-thumb {
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  background: var(--amber);
+  border: 2px solid var(--ink);
+}
+.tavern-player__slider::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border-radius: 0;
+  background: var(--amber);
+  border: 2px solid var(--ink);
+}
+.tavern-player__toggles { margin-top: 10px; gap: 6px; }
+.tavern-player__toggles button {
+  flex: 1;
+  padding: 6px 0;
+  font-family: var(--font-pixel);
+  font-size: 7px;
+  color: var(--cream-dim);
+  background: var(--night-3);
+  border: 2px solid var(--ink);
+  cursor: pointer;
+}
+.tavern-player__toggles button:hover { border-color: var(--amber); }
+.tavern-player__toggles button.is-on { color: var(--ink); background: var(--amber); }
+.tavern-player__status {
+  margin: 9px 0 0;
+  min-height: 1.4em;
+  font-size: 10px;
+  color: #9b8bb6;
+}
+
+/* ---- 窄屏：对话框出现时把悬浮控件上移，避免互相遮挡 ---- */
+@media (max-width: 1000px) {
+  .has-dialogue .tavern-player,
+  .has-dialogue .back-to-top,
+  .has-dialogue .toast { bottom: 150px; }
+}
+
+/* ---- 页面隐藏时暂停纯装饰动画 ---- */
+.is-page-hidden .scene-fx *,
+.is-page-hidden .scene-motes *,
+.is-page-hidden .scene-frame__art,
+.is-page-hidden .scene-frame__art picture,
+.is-page-hidden .lantern i,
+.is-page-hidden .hero__star { animation-play-state: paused; }
+
+/* ---- 逐帧素材启用时的覆盖层（当前 FRAME_ASSETS 为空，不产生任何节点） ---- */
+.frame-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+  image-rendering: pixelated;
 }
 
 /* ---------- reduced motion ---------- */
@@ -1673,5 +2046,8 @@ code {
   .scene-fx__moon { opacity: 0.62; }
   .scene-fx__zzz { display: none; }
   .scene-frame__art { animation: none; }
+  .scene-motes { display: none; }
+  .tavern-dialogue.is-pop { animation: none; }
+  .tavern-dialogue, .actor-zone { transition: none; }
   .companion-card__art img { animation: none; }
 }

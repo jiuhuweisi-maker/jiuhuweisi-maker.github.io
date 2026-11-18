@@ -233,6 +233,20 @@ export const ICONS: Record<string, string[]> = {
     '...aaaaaa...',
     '............',
   ],
+  music: [
+    '............',
+    '......aaa...',
+    '......aaa...',
+    '......a.a...',
+    '......a.a...',
+    '......a.a...',
+    '......a.a...',
+    '..aaaaa.a...',
+    '.aaaaaaaa...',
+    '.aaaaaaa....',
+    '..aaaa......',
+    '............',
+  ],
 };
 
 export type IconName = keyof typeof ICONS;

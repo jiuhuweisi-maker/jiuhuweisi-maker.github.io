@@ -1,0 +1,24 @@
+---
+import PixelIcon from './PixelIcon.astro';
+---
+
+<!-- RPG 对话框固定在视口底部，不遮挡插画里任何角色的脸，也不推挤页面布局 -->
+<div class="tavern-dialogue" data-dialogue role="status" aria-live="polite" aria-atomic="true" hidden>
+  <div class="tavern-dialogue__portrait" data-dlg-portrait aria-hidden="true">
+    <span data-portrait="dragon"><PixelIcon name="star" size={26} /></span>
+    <span data-portrait="whale"><PixelIcon name="whale" size={26} /></span>
+    <span data-portrait="cat"><PixelIcon name="cat" size={26} /></span>
+    <span data-portrait="narrator"><PixelIcon name="moon" size={26} /></span>
+  </div>
+
+  <div class="tavern-dialogue__body">
+    <div class="tavern-dialogue__head">
+      <span class="tavern-dialogue__name" data-dlg-name></span>
+      <span class="tavern-dialogue__mood" data-dlg-mood hidden></span>
+      <span class="tavern-dialogue__chapter" data-dlg-chapter hidden></span>
+    </div>
+    <p class="tavern-dialogue__text" data-dlg-text></p>
+  </div>
+
+  <button class="tavern-dialogue__skip" type="button" data-dlg-skip hidden>跳过 ▶</button>
+</div>

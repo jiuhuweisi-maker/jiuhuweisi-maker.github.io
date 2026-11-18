@@ -1,5 +1,6 @@
 ---
 import PixelIcon from './PixelIcon.astro';
+import { ACTORS } from '../data/tavern';
 ---
 
 <section class="hero" id="home" aria-labelledby="hero-title">
@@ -71,12 +72,33 @@ import PixelIcon from './PixelIcon.astro';
           <span class="scene-fx__counter"></span>
         </div>
 
+        <!-- 环境光点单独一层，按可见画布分布，手机裁切后不会错位 -->
+        <div class="scene-motes" data-scene-motes aria-hidden="true"></div>
+
+        <!-- 三角色点击热区：坐标由 layoutZones() 按 object-fit 实际绘制矩形换算 -->
+        <div class="actor-zones" data-actor-zones>
+          {ACTORS.map((actor) => (
+            <button
+              class="actor-zone"
+              type="button"
+              data-actor-zone={actor.id}
+              aria-label={`点击和${actor.name}说话`}
+              title={`点击和${actor.name}说话`}
+            >
+              <span class="actor-zone__tag">{actor.name}<span aria-hidden="true"> ▸</span></span>
+            </button>
+          ))}
+        </div>
+
         <span class="scene-frame__glare" aria-hidden="true"></span>
         <button class="scene-cat" id="secret-cat" type="button" aria-label="摸摸吧台上的猫">
           <PixelIcon name="cat" size={22} />
         </button>
       </div>
-      <p class="scene-caption"><span class="scene-caption__tag">NOW OPEN</span> 今晚也营业中，请随意找个位置坐下。</p>
+      <p class="scene-caption">
+        <span class="scene-caption__tag">NOW OPEN</span> 今晚也营业中，请随意找个位置坐下。
+        <span class="scene-caption__hint">点击画里的伙伴聊天 · 左下角 ♪ 可放音乐。</span>
+      </p>
     </div>
   </div>
 

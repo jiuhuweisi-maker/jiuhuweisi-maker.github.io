@@ -1,0 +1,58 @@
+---
+import PixelIcon from './PixelIcon.astro';
+import { BGM } from '../data/tavern';
+---
+
+<!-- 迷你像素 BGM 播放器：默认不自动播放，音量 18%，偏好写入 localStorage -->
+<div class="tavern-player is-collapsed" data-player>
+  <button
+    class="tavern-player__fab"
+    type="button"
+    data-player-expand
+    aria-label="展开背景音乐播放器"
+    title="背景音乐 · 点击展开"
+  >
+    <PixelIcon name="music" size={22} />
+    <span class="tavern-player__fab-note" aria-hidden="true">♪</span>
+    <span class="tavern-player__fab-label" aria-hidden="true">BGM</span>
+  </button>
+
+  <div class="tavern-player__panel">
+    <div class="tavern-player__head">
+      <span class="tavern-player__icon"><PixelIcon name="music" size={18} /></span>
+      <span class="tavern-player__label">BGM / 酒馆点唱机</span>
+      <button class="tavern-player__collapse" type="button" data-player-collapse aria-label="收起播放器" title="收起">—</button>
+    </div>
+
+    <p class="tavern-player__title">{BGM.title}</p>
+    <p class="tavern-player__sub">{BGM.subtitle}</p>
+
+    <div class="tavern-player__row">
+      <button class="tavern-player__play" type="button" data-player-toggle aria-label="播放背景音乐">▶</button>
+      <div class="tavern-player__volume">
+        <label class="tavern-player__vol-label" for="tavern-volume">
+          VOL <span data-player-volume-value>18%</span>
+        </label>
+        <input
+          id="tavern-volume"
+          class="tavern-player__slider"
+          type="range"
+          min="0"
+          max="100"
+          step="1"
+          value="18"
+          data-player-volume
+          aria-label="背景音乐音量"
+        />
+      </div>
+    </div>
+
+    <div class="tavern-player__row tavern-player__toggles">
+      <button type="button" data-player-mute aria-pressed="false">静音</button>
+      <button type="button" data-player-loop aria-pressed="true">循环</button>
+      <button type="button" data-player-sfx aria-pressed="false">音效</button>
+    </div>
+
+    <p class="tavern-player__status" data-player-status>点击 ▶ 播放，不会自动开始</p>
+  </div>
+</div>

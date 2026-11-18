@@ -3,6 +3,8 @@ import '@fontsource/press-start-2p/latin-400.css';
 import '@fontsource/vt323/latin-400.css';
 import '../styles/global.css';
 import { site } from '../data/site';
+import TavernDialogue from '../components/TavernDialogue.astro';
+import TavernPlayer from '../components/TavernPlayer.astro';
 
 interface Props {
   title?: string;
@@ -68,6 +70,12 @@ const ogImage = new URL(site.ogImage, site.domain).href;
     <slot />
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <TavernDialogue />
+    <TavernPlayer />
+
+    <script>
+      import '../scripts/tavern';
+    </script>
 
     <script is:inline>
       (() => {
