@@ -41,19 +41,36 @@ import PixelIcon from './PixelIcon.astro';
     <div class="hero__scene" data-reveal>
       <span class="lantern lantern--left" aria-hidden="true"><i></i></span>
       <span class="lantern lantern--right" aria-hidden="true"><i></i></span>
-      <div class="scene-frame">
-        <picture>
-          <source media="(max-width: 720px)" srcset="/images/tavern-hero-sm.webp" />
-          <img
-            src="/images/tavern-hero.webp"
-            width="1600"
-            height="901"
-            alt="像素风酒馆夜景：发光的 Bistro's Tavern 木招牌、暖色吊灯与木质吧台，龙娘与蓝发 AI 少女坐在吧台边，桌上有酒杯、笔记本电脑、甜点和睡着的小猫"
-            loading="eager"
-            fetchpriority="high"
-            decoding="async"
-          />
-        </picture>
+      <div class="scene-frame" data-scene>
+        <div class="scene-frame__art">
+          <picture>
+            <source media="(max-width: 720px)" srcset="/images/tavern-hero-sm.webp" />
+            <img
+              src="/images/tavern-hero.webp"
+              width="1600"
+              height="901"
+              alt="像素风酒馆夜景：发光的 Bistro's Tavern 木招牌、暖色吊灯与木质吧台，龙娘与蓝发 AI 少女坐在吧台边，桌上有酒杯、笔记本电脑、甜点和睡着的小猫"
+              loading="eager"
+              fetchpriority="high"
+              decoding="async"
+            />
+          </picture>
+        </div>
+
+        <!-- 轻量动态图层：纯 CSS 光效 + JS 生成的星点，不加载视频 -->
+        <div class="scene-fx" aria-hidden="true">
+          <span class="scene-fx__moon"></span>
+          <span class="scene-fx__lamp" style="--lx:8%;--ly:9%;--ld:0s"></span>
+          <span class="scene-fx__lamp" style="--lx:23%;--ly:11%;--ld:1.3s"></span>
+          <span class="scene-fx__lamp" style="--lx:39%;--ly:6%;--ld:2.6s;--lw:9%;--lh:16%"></span>
+          <span class="scene-fx__lamp" style="--lx:7%;--ly:70%;--ld:.8s;--lw:13%;--lh:20%"></span>
+          <span class="scene-fx__lamp" style="--lx:52%;--ly:83%;--ld:2.1s;--lw:11%;--lh:18%"></span>
+          <span class="scene-fx__lamp" style="--lx:97%;--ly:70%;--ld:3.2s;--lw:12%;--lh:20%"></span>
+          <div class="scene-fx__stars" data-scene-stars></div>
+          <div class="scene-fx__zzz"><span>z</span><span>z</span><span>z</span></div>
+          <span class="scene-fx__counter"></span>
+        </div>
+
         <span class="scene-frame__glare" aria-hidden="true"></span>
         <button class="scene-cat" id="secret-cat" type="button" aria-label="摸摸吧台上的猫">
           <PixelIcon name="cat" size={22} />

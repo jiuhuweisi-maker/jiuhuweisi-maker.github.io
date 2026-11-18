@@ -144,27 +144,76 @@ const ogImage = new URL(site.ogImage, site.domain).href;
           });
         });
 
-        /* ---- companion dialogue ---- */
+        /* ---- companion dialogue: random line, never twice in a row ---- */
         document.querySelectorAll('[data-companion]').forEach((card) => {
           const lines = JSON.parse(card.getAttribute('data-lines') || '[]');
           const output = card.querySelector('[data-line]');
-          let index = 0;
-          const advance = () => {
-            if (!lines.length || !output) return;
-            index = (index + 1) % lines.length;
-            output.textContent = lines[index];
+          if (!lines.length || !output) return;
+          let last = Math.floor(Math.random() * lines.length);
+          output.textContent = lines[last];
+          const shuffle = () => {
+            let next = Math.floor(Math.random() * lines.length);
+            if (lines.length > 1 && next === last) next = (next + 1) % lines.length;
+            last = next;
+            output.textContent = lines[next];
             card.classList.remove('is-talking');
             void card.offsetWidth;
             card.classList.add('is-talking');
           };
-          card.addEventListener('click', advance);
+          card.addEventListener('click', shuffle);
           card.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' || e.key === ' ') {
               e.preventDefault();
-              advance();
+              shuffle();
             }
           });
         });
+
+        /* ---- living tavern scene: random stars + very gentle parallax ---- */
+        const scene = document.querySelector('[data-scene]');
+        if (scene && !reduced) {
+          const starLayer = scene.querySelector('[data-scene-stars]');
+          if (starLayer) {
+            const zones = [
+              { x0: 37, x1: 65, y0: 4, y1: 46 },
+              { x0: 84, x1: 97, y0: 30, y1: 56 },
+            ];
+            const frag = document.createDocumentFragment();
+            for (let i = 0; i < 24; i += 1) {
+              const zone = i % 4 === 0 ? zones[1] : zones[0];
+              const x = zone.x0 + Math.random() * (zone.x1 - zone.x0);
+              const y = zone.y0 + Math.random() * (zone.y1 - zone.y0);
+              if (Math.abs(x - 59) < 6 && Math.abs(y - 8) < 13) continue;
+              const star = document.createElement('i');
+              star.className = 'scene-fx__star';
+              star.style.setProperty('--x', x.toFixed(2) + '%');
+              star.style.setProperty('--y', y.toFixed(2) + '%');
+              star.style.setProperty('--s', (Math.random() < 0.25 ? 3 : 2) + 'px');
+              star.style.setProperty('--t', (2.8 + Math.random() * 4.6).toFixed(2) + 's');
+              star.style.setProperty('--d', (Math.random() * 5).toFixed(2) + 's');
+              frag.appendChild(star);
+            }
+            starLayer.appendChild(frag);
+          }
+          let pending = false;
+          scene.addEventListener('pointermove', (e) => {
+            if (e.pointerType && e.pointerType !== 'mouse') return;
+            if (pending) return;
+            pending = true;
+            requestAnimationFrame(() => {
+              pending = false;
+              const r = scene.getBoundingClientRect();
+              const dx = Math.max(-1, Math.min(1, (e.clientX - (r.left + r.width / 2)) / (r.width / 2)));
+              const dy = Math.max(-1, Math.min(1, (e.clientY - (r.top + r.height / 2)) / (r.height / 2)));
+              scene.style.setProperty('--px', (dx * 3).toFixed(2));
+              scene.style.setProperty('--py', (dy * 2).toFixed(2));
+            });
+          }, { passive: true });
+          scene.addEventListener('pointerleave', () => {
+            scene.style.setProperty('--px', '0');
+            scene.style.setProperty('--py', '0');
+          });
+        }
 
         /* ---- toast + easter eggs ---- */
         const toast = document.getElementById('toast');

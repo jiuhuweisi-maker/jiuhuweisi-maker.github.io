@@ -693,6 +693,129 @@ code {
   letter-spacing: 0.05em;
 }
 
+/* ---------- living tavern scene: lightweight CSS/JS layers ---------- */
+.scene-frame__art {
+  position: absolute;
+  inset: 0;
+  animation: sceneBreathe 16s ease-in-out infinite;
+}
+.scene-frame__art picture {
+  display: block;
+  transform: scale(1.02) translate3d(calc(var(--px, 0) * 1px), calc(var(--py, 0) * 1px), 0);
+}
+.scene-fx {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  overflow: hidden;
+  pointer-events: none;
+}
+.scene-fx__lamp {
+  position: absolute;
+  left: var(--lx);
+  top: var(--ly);
+  width: var(--lw, 16%);
+  height: var(--lh, 26%);
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: radial-gradient(ellipse, rgba(255, 205, 122, 0.42) 0%, rgba(255, 170, 82, 0.15) 38%, transparent 72%);
+  mix-blend-mode: screen;
+  animation: lampFlicker 5.2s ease-in-out infinite;
+  animation-delay: var(--ld, 0s);
+}
+.scene-fx__moon {
+  position: absolute;
+  left: 59%;
+  top: 8%;
+  width: 11%;
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 244, 208, 0.42) 0%, rgba(190, 190, 255, 0.14) 45%, transparent 72%);
+  mix-blend-mode: screen;
+  animation: moonBreathe 7.5s ease-in-out infinite;
+}
+.scene-fx__stars { position: absolute; inset: 0; }
+.scene-fx__star {
+  position: absolute;
+  left: var(--x);
+  top: var(--y);
+  width: var(--s, 3px);
+  height: var(--s, 3px);
+  background: #fff3c8;
+  box-shadow: 0 0 6px rgba(255, 226, 160, 0.9);
+  opacity: 0.14;
+  animation: starBlink var(--t, 4s) steps(2, end) infinite;
+  animation-delay: var(--d, 0s);
+}
+.scene-fx__zzz {
+  position: absolute;
+  left: 90.5%;
+  top: 33%;
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  font-family: var(--font-pixel);
+  font-size: clamp(9px, 0.85vw, 12px);
+  color: #ffe6b0;
+  text-shadow:
+    1px 1px 0 #2b1a33,
+    -1px -1px 0 #2b1a33,
+    1px -1px 0 #2b1a33,
+    -1px 1px 0 #2b1a33,
+    0 0 8px rgba(255, 205, 130, 0.85);
+}
+.scene-fx__zzz span {
+  opacity: 0;
+  animation: zzzFloat 5.4s ease-in-out infinite;
+}
+.scene-fx__zzz span:nth-child(2) { animation-delay: 0.9s; font-size: 1.15em; }
+.scene-fx__zzz span:nth-child(3) { animation-delay: 1.8s; font-size: 1.3em; }
+.scene-fx__counter {
+  position: absolute;
+  left: 6%;
+  right: 6%;
+  bottom: 2%;
+  height: 15%;
+  background: linear-gradient(90deg, transparent 4%, rgba(255, 210, 140, 0.06) 22%, rgba(255, 226, 170, 0.26) 48%, rgba(255, 210, 140, 0.08) 72%, transparent 94%);
+  mix-blend-mode: screen;
+  opacity: 0.16;
+  animation: counterShimmer 11s ease-in-out infinite;
+}
+@keyframes sceneBreathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.012); }
+}
+@keyframes lampFlicker {
+  0%, 100% { opacity: 0.52; }
+  18% { opacity: 0.78; }
+  36% { opacity: 0.48; }
+  57% { opacity: 0.84; }
+  74% { opacity: 0.56; }
+  88% { opacity: 0.72; }
+}
+@keyframes moonBreathe {
+  0%, 100% { opacity: 0.5; transform: translate(-50%, -50%) scale(1); }
+  50% { opacity: 0.95; transform: translate(-50%, -50%) scale(1.14); }
+}
+@keyframes starBlink {
+  0%, 100% { opacity: 0.12; }
+  45% { opacity: 0.9; }
+}
+@keyframes zzzFloat {
+  0% { opacity: 0; transform: translateY(5px); }
+  22% { opacity: 0.9; }
+  70% { opacity: 0.5; }
+  100% { opacity: 0; transform: translateY(-11px); }
+}
+@keyframes counterShimmer {
+  0%, 78%, 100% { opacity: 0.16; }
+  83% { opacity: 0.7; }
+  87% { opacity: 0.22; }
+  92% { opacity: 0.52; }
+  96% { opacity: 0.18; }
+}
+
 /* ---------- quest board ---------- */
 .quests {
   background: linear-gradient(180deg, rgba(27, 20, 54, 0) 0%, rgba(27, 20, 54, 0.72) 14%, rgba(18, 14, 41, 0.85) 100%);
@@ -1025,7 +1148,8 @@ code {
 }
 .companion-card {
   display: grid;
-  grid-template-columns: 184px 1fr;
+  grid-template-columns: minmax(0, 43%) minmax(0, 1fr);
+  min-height: 368px;
   background: var(--night-2);
   border: 3px solid #4a3355;
   box-shadow: 0 0 0 3px var(--night-1), 6px 8px 0 rgba(10, 7, 24, 0.5);
@@ -1042,18 +1166,88 @@ code {
   position: relative;
   display: grid;
   place-items: center;
-  min-height: 224px;
-  padding: 18px;
+  min-height: 100%;
+  padding: 12px 10px;
+  overflow: hidden;
   background:
-    repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.025) 0 6px, transparent 6px 12px),
-    linear-gradient(150deg, var(--night-3), var(--night-1));
+    radial-gradient(ellipse at 50% 78%, rgba(255, 190, 105, 0.17), transparent 62%),
+    repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.02) 0 6px, transparent 6px 12px),
+    linear-gradient(160deg, #2b2052 0%, #1a1435 62%, #2a1c3c 100%);
   border-right: 3px solid #4a3355;
 }
+.companion-card__art::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 18% 22%, rgba(255, 222, 160, 0.55) 0 1px, transparent 2px),
+    radial-gradient(circle at 78% 15%, rgba(185, 166, 239, 0.6) 0 1px, transparent 2px),
+    radial-gradient(circle at 86% 40%, rgba(255, 222, 160, 0.42) 0 1px, transparent 2px),
+    radial-gradient(circle at 22% 58%, rgba(185, 166, 239, 0.4) 0 1px, transparent 2px);
+}
+.companion-card__art::after {
+  content: "";
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  bottom: 8%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(255, 205, 130, 0.42), transparent);
+  box-shadow: 0 0 18px rgba(255, 190, 105, 0.3);
+}
 .companion-card__art img {
+  position: relative;
+  z-index: 1;
   width: 100%;
   height: 100%;
+  max-height: 344px;
   object-fit: contain;
-  image-rendering: pixelated;
+  object-position: center bottom;
+  filter: drop-shadow(0 0 12px rgba(255, 190, 110, 0.2)) drop-shadow(0 6px 0 rgba(10, 7, 24, 0.35));
+  animation: companionIdle 7s ease-in-out infinite;
+}
+.companion-card:nth-child(2) .companion-card__art img { animation-delay: 1.6s; }
+.companion-card__code {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 2;
+  font-family: var(--font-pixel);
+  font-size: 7px;
+  letter-spacing: 0.08em;
+  color: #8d7cb3;
+}
+.companion-card__status {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 7px;
+  font-family: var(--font-pixel);
+  font-size: 6.5px;
+  color: var(--amber-soft);
+  background: rgba(18, 14, 41, 0.86);
+  border: 2px solid #5b4372;
+}
+.companion-card__status::before {
+  content: "";
+  width: 5px;
+  height: 5px;
+  background: var(--mint);
+  box-shadow: 0 0 6px var(--mint);
+  animation: dotPulse 3s ease-in-out infinite;
+}
+.accent-cyan .companion-card__status::before {
+  background: var(--cyan);
+  box-shadow: 0 0 6px var(--cyan);
+}
+@keyframes companionIdle {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
 }
 .art-placeholder { text-align: center; }
 .art-placeholder__frame {
@@ -1089,8 +1283,9 @@ code {
 }
 .companion-card__spark {
   position: absolute;
-  top: 12px;
-  right: 12px;
+  bottom: 14px;
+  left: 14px;
+  z-index: 2;
   --icon-a: var(--amber);
   animation: twinkle 4s steps(2) infinite;
 }
@@ -1385,7 +1580,8 @@ code {
   .quest-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .sheet { grid-template-columns: 220px 1fr; }
   .companion-grid, .portal-grid { gap: 18px; }
-  .companion-card { grid-template-columns: 150px 1fr; }
+  .companion-card { grid-template-columns: minmax(0, 38%) minmax(0, 1fr); min-height: 340px; }
+  .companion-card__art img { max-height: 316px; }
   .portal-card { grid-template-columns: 76px 1fr; }
   .portal-card__go { grid-column: 2; justify-self: start; }
 }
@@ -1439,7 +1635,10 @@ code {
   .hero__scene { padding: 9px; }
   .scene-frame { aspect-ratio: 1 / 1; }
   .scene-frame img { object-fit: cover; object-position: 50% 42%; }
-  .scene-cat { left: 62%; bottom: 3%; }
+  /* 头图被裁成正方形后，动效层沿用原始 16:9 画布坐标，灯光与 Zzz 才不会错位 */
+  .scene-fx { width: 177.6%; left: 50%; right: auto; transform: translateX(-50%); }
+  .scene-fx__zzz { left: 66%; top: 38%; font-size: 11px; }
+  .scene-cat { left: 62%; bottom: 3%; z-index: 3; }
   .hero__bar { justify-content: center; padding: 14px; gap: 4px 18px; }
   .quest-board { padding: 14px; }
   .quest-grid { grid-template-columns: 1fr; gap: 18px; }
@@ -1449,8 +1648,9 @@ code {
   .sheet__body { padding: 22px 20px; }
   .sheet__row { flex-wrap: wrap; gap: 6px 12px; }
   .sheet__key { width: auto; }
-  .companion-card { grid-template-columns: 1fr; }
-  .companion-card__art { min-height: 190px; border-right: none; border-bottom: 3px solid #4a3355; }
+  .companion-card { grid-template-columns: 1fr; min-height: 0; }
+  .companion-card__art { min-height: 318px; padding: 10px; border-right: none; border-bottom: 3px solid #4a3355; }
+  .companion-card__art img { max-height: 296px; }
   .companion-card__body { padding: 18px 20px; }
   .portal-card { grid-template-columns: 66px 1fr; gap: 12px; padding: 18px 16px; }
   .portal-card__gate { width: 64px; height: 64px; }
@@ -1469,4 +1669,9 @@ code {
     transition-duration: 0.001ms !important;
   }
   [data-reveal] { opacity: 1; transform: none; }
+  .scene-fx__lamp { opacity: 0.55; }
+  .scene-fx__moon { opacity: 0.62; }
+  .scene-fx__zzz { display: none; }
+  .scene-frame__art { animation: none; }
+  .companion-card__art img { animation: none; }
 }

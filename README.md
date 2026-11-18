@@ -14,7 +14,7 @@ npm run check    # Astro + TypeScript 检查
 
 ## 部署
 
-推送到 `main` 会自动触发 `.github/workflows/deploy.yml`：安装依赖 → 构建 → 上传 artifact → 发布到 GitHub Pages。
+仓库根目录的 `deploy-workflow.yml` 是 GitHub Actions 自动构建配置（启用后放到 `.github/workflows/deploy.yml`）：安装依赖 → 构建 → 上传 artifact → 发布到 GitHub Pages。**当前实际发布方式见下方「当前部署状态」**。
 
 `public/CNAME` 必须保留内容为 `jiuhuweisi.me`，否则自定义域名会被清掉。仓库根目录的 `CNAME` 也保留，兼容旧配置。
 
@@ -30,8 +30,9 @@ npm run check    # Astro + TypeScript 检查
 ## 其他配置
 
 - 传送门平台：`src/data/site.ts` 的 `socials`，只放真实存在的地址。
-- 酒馆伙伴：`src/data/companions.ts`，给角色加 `art`（`public/images/` 下的路径）即可把占位卡换成正式立绘；`lines` 是点击轮换的台词。
+- 酒馆伙伴：`src/data/companions.ts`。`art` 指向 `public/images/` 下的**透明背景** WebP 立绘（当前为 `companion-dragon.webp` / `companion-whale.webp`），留空自动回退到问号占位卡；`lines` 是点击卡片时随机抽取的台词，`status` 是右上角状态牌。换立绘只改路径，不用动组件。
 - 首屏插画：`public/images/tavern-hero.webp`（桌面）与 `tavern-hero-sm.webp`（手机），`og-cover.webp` 是分享图。首屏主视觉用 eager 保证加载速度，角色立绘等其余图片用 lazy。
+- 头图动效：`src/components/Hero.astro` 里的 `.scene-fx` 是覆盖在原插画上的轻量图层（6 处暖灯光晕、月亮呼吸光、Zzz 上浮、桌面高光），`src/layouts/BaseLayout.astro` 负责生成 20 余颗随机星点并做 ±3px 鼠标视差，样式与 keyframes 在 `src/styles/global.css` 的 `living tavern scene` 段。没有视频、没有新依赖；`prefers-reduced-motion: reduce` 下星点不生成、Zzz 隐藏、所有动画停用，只保留静态柔光。手机端头图被裁成正方形，`.scene-fx` 在 640px 断点下用 `177.6%` 宽度对齐原始 16:9 画布坐标，改灯位时记得同时看手机截图。
 
 ## 当前部署状态（V1）
 

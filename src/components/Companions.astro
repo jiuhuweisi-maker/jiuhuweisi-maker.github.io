@@ -8,11 +8,11 @@ import { companions } from '../data/companions';
     <header class="section-head" data-reveal>
       <p class="section-kicker"><span class="kicker-num">03</span> TAVERN COMPANIONS</p>
       <h2 class="section-title" id="companions-title">酒馆伙伴<span class="section-title__en">PARTY MEMBERS</span></h2>
-      <p class="section-desc">两位常驻伙伴的座位已经留好了。正式立绘到位前，先放同款占位卡，不擅自决定长相。</p>
+      <p class="section-desc">两位常驻伙伴的正式立绘已经挂上墙了。点一下卡片，听她们随机说一句。</p>
     </header>
 
     <div class="companion-grid">
-      {companions.map((c) => (
+      {companions.map((c, i) => (
         <article
           class:list={['companion-card', `accent-${c.accent}`]}
           data-companion
@@ -20,17 +20,26 @@ import { companions } from '../data/companions';
           data-reveal
           role="button"
           tabindex="0"
-          aria-label={`和 ${c.name} 说句话，点击切换台词`}
+          aria-label={`和 ${c.name} 说句话，点击随机切换台词`}
         >
           <div class="companion-card__art">
             {c.art ? (
-              <img src={c.art} alt={`${c.name} 的正式立绘`} loading="lazy" width="320" height="320" />
+              <img
+                src={c.art}
+                alt={`${c.name} 的像素风正式立绘`}
+                loading="lazy"
+                decoding="async"
+                width="1000"
+                height="1536"
+              />
             ) : (
               <div class="art-placeholder" aria-hidden="true">
                 <div class="art-placeholder__frame"><span>?</span></div>
                 <p>ART PENDING<small>正式立绘待补</small></p>
               </div>
             )}
+            <span class="companion-card__code">{String(i + 1).padStart(2, '0')} / PARTY</span>
+            {c.status && <span class="companion-card__status">{c.status}</span>}
             <PixelIcon name="star" size={18} class="companion-card__spark" />
           </div>
 
@@ -44,14 +53,14 @@ import { companions } from '../data/companions';
               <span class="dialogue__name">{c.name}</span>
               <p class="dialogue__text" data-line>{c.lines[0]}</p>
             </div>
-            <p class="companion-card__hint">点击卡片换一句台词 ▸</p>
+            <p class="companion-card__hint">点一下，随机听一句 ▸</p>
           </div>
         </article>
       ))}
     </div>
 
     <p class="section-note" data-reveal>
-      想换正式立绘？把图片放进 <code>public/images/</code>，在 <code>src/data/companions.ts</code> 给对应角色加上 <code>art</code> 路径即可。
+      想换立绘？把透明背景的 WebP 放进 <code>public/images/</code>，在 <code>src/data/companions.ts</code> 改 <code>art</code> 路径即可；台词也都在同一个文件里。
     </p>
   </div>
 </section>
