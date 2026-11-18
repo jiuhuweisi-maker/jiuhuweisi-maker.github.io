@@ -1634,12 +1634,14 @@ code {
   .hero__actions .btn { flex: 1 1 0; width: auto; max-width: 210px; padding-inline: 10px; }
   .hero__moon { right: 4%; opacity: 0.5; transform: scale(0.78); }
   .hero__scene { padding: 9px; }
-  .scene-frame { aspect-ratio: 1 / 1; }
-  .scene-frame img { object-fit: cover; object-position: 50% 42%; }
-  /* 头图被裁成正方形后，动效层沿用原始 16:9 画布坐标，灯光与 Zzz 才不会错位 */
-  .scene-fx { width: 177.6%; left: 50%; right: auto; transform: translateX(-50%); }
-  .scene-fx__zzz { left: 66%; top: 38%; font-size: 11px; }
-  .scene-cat { left: 62%; bottom: 3%; z-index: 3; }
+  /* 手机端容器保持原图 16:9 比例：16:9 插画不再被左右裁掉约 22%，
+     GPT 龙娘与鲸戒都能完整入镜。object-fit 仍为 cover（与 layoutZones()
+     的热区换算一致），因为比例相同所以几乎不产生裁切，也不会拉伸。
+     光效层 / Zzz / 彩蛋按钮因此沿用桌面同一套百分比坐标，不再需要 177.6% 补偿。 */
+  .scene-frame { aspect-ratio: 1600 / 901; }
+  .scene-frame img { object-fit: cover; object-position: 50% 50%; }
+  /* 头图变回 16:9 后说明文字进入首屏底部，给左下角 ♪ 悬浮按钮让出一条通道 */
+  .scene-caption { padding-left: 56px; }
   .hero__bar { justify-content: center; padding: 14px; gap: 4px 18px; }
   .quest-board { padding: 14px; }
   .quest-grid { grid-template-columns: 1fr; gap: 18px; }
