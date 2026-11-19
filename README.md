@@ -63,7 +63,7 @@ git add -A && git commit -m "Update site" && git push origin main
 - 酒馆伙伴：`src/data/companions.ts`。**Bistro 才是店主**；GPT 龙娘是「酒馆管事 · 负责看店」，鲸戒是「聊天店员 · 负责陪聊」，别写反。`art` 指向 `public/images/` 下的透明背景 WebP 立绘，换立绘时把新图放进 `public/images/` 再改这里的路径即可，组件不用动；留空自动回退问号占位卡。`lines` 是点击卡片随机抽取的台词，`role` 是身份徽章文案，`setting` 是设定说明，`status` 是右上角状态牌，都在这个文件里。
 - 页面只给访客看内容：换立绘、加平台、改台词这类维护说明只写在本文档，不要出现在网页上。
 - 首屏插画：`public/images/tavern-hero.webp`（1600×901 桌面）与 `tavern-hero-sm.webp`（820×462 手机），`og-cover.webp` 是分享图。主视觉用 eager，其余图片 lazy。
-- 头图动效：`Hero.astro` 的 `.scene-fx` 是覆盖在原插画上的轻量图层（6 处暖灯光晕、月亮呼吸光、Zzz 上浮、桌面高光），`BaseLayout.astro` 生成随机星点并做 ±3px 鼠标视差，样式在 `global.css` 的 `living tavern scene` 段。没有视频、没有新依赖；`prefers-reduced-motion: reduce` 下停掉全部动画。
+- 头图动效：`Hero.astro` 的 `.scene-fx` 是覆盖在原插画上的轻量图层（6 处暖灯光晕、月亮呼吸光、Zzz 上浮、桌面高光），`BaseLayout.astro` 生成随机星点并做 ±3px 鼠标视差，样式在 `global.css` 的 `living tavern scene` 段。`prefers-reduced-motion: reduce` 下停掉全部动画。V1.5 起头图另有 Veo/Omni 视频层（见 `V1.5` 章节），但静态插画始终是首屏与失败回退；视频层无依赖、无音轨。
 - **手机端头图比例**：640px 断点下 `.scene-frame` 用 `aspect-ratio: 1600 / 901` 保持原图比例，`object-fit: cover` 但几乎不裁切，光效层 / Zzz / 热区 / 彩蛋按钮沿用桌面同一套百分比坐标。曾经把容器改成 `1 / 1` 导致鲸戒被切掉半张脸，并用 `177.6%` 宽度补偿光效坐标，这套做法**已经废弃**，不要恢复。
 - V1.2 新增 `.scene-motes`、`[data-actor-zone]` 三角色热区、`.tavern-dialogue` 对话框、`.tavern-player` 点唱机；V1.3 新增 `.frame-layer` 与 `.quest-dossier`。
 
@@ -109,6 +109,15 @@ git add -A && git commit -m "Update site" && git push origin main
 - 四张传送门统一图标底板（34×34）、按钮宽度（82px）、简介两行高度与卡片最小高度；链接与 `rel` 未动。
 - 首页标题区到头图加暖金引导线（不占布局高度）与画框上沿木质横梁。
 - 页面上的换立绘 / 加平台路径提示全部移除，维护说明只保留在本文档「其他配置」。
+
+## V1.5 · 动态头图视频（2026-11-19）
+
+- 四段 **Frames-to-Video** 素材全部由 Google Flow 生成，首帧与尾帧都是同一张 `tavern-hero.webp`，固定 16:9 机位、无音轨。最终四段统一用 **Omni 1.2 Flash**（`dragon/whale/cat` 按 8 关键帧动作参考设计，`idle` 为待机循环）；首轮 Veo 版因中段变形/遮挡招牌被弃用，未上线。
+- 素材在 `public/videos/{tavern-idle,dragon-react,whale-react,cat-react}.{webm,mp4}`（VP9 + H.264 双格式，各约 1.5–2.2 MB，共约 15 MB）。WebM 优先、MP4 兜底；静态 `tavern-hero.webp` 永远是首屏与失败回退。
+- 统一状态机 `src/scripts/tavern-video.ts` 的 `TavernVideoManager`：STATIC / IDLE_LOADING / IDLE_PLAYING / REACT_LOADING / REACT_PLAYING / RETURNING / ERROR。集中管理，先让目标视频就绪再单层可见切换（不黑屏）；连点只保留最新一个待处理请求、不截断当前动画；剧情跳过取消待处理请求；切标签页暂停解码；失败/弱网/reduced-motion 回退静态图。与 `TavernAudio` 完全独立，视频全部静音无音轨。
+- 接入点在 `src/scripts/tavern.ts` 的 `boot()`（创建 manager）与 `TavernLife.onActor()`（触发 react）/ `skipStory()`（取消 pending）；视频层 CSS 在 `global.css` 的 `V1.5 Veo 头图视频层` 段，用与底图相同的 `scale(1.02)` 变换逐像素对齐。三角色热区、台词、剧情、BGM 均未改。
+- 生成提示词与审核脚本在 `.cache/v15/`（`prompts.json` / `audit2.py`）；审核以首尾一致、动作可控、无变形为硬指标，画风漂移只记录（用户接受 AI 化画风）。动作参考图只用于设计动作序列，不改首帧约束。
+- 素材缺口：AI 视频仍会有轻微画风软化；`whale/cat` 动作幅度受"不变形"约束而偏克制。没有画师提供的透明逐帧素材前，不追求逐像素完美。
 
 ## HTTPS 状态（2026-11-19 复核）
 

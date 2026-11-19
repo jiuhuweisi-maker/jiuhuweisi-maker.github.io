@@ -2363,6 +2363,27 @@ code {
   transform: scale(1.02) translate3d(calc(var(--px, 0) * 1px), calc(var(--py, 0) * 1px), 0);
 }
 
+/* ---- V1.5 Veo 头图视频层：与底图同一套变换，逐像素对齐 ---- */
+.scene-video {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+  image-rendering: pixelated;
+  transform: scale(1.02) translate3d(calc(var(--px, 0) * 1px), calc(var(--py, 0) * 1px), 0);
+  /* 极短线性切换只为避免黑屏，不做模糊/夸张淡入淡出 */
+  opacity: 0;
+  transition: opacity 0.12s linear;
+}
+.scene-video.is-ready { opacity: 0; }
+.scene-video.is-shown { opacity: 1; z-index: 2; }
+/* 待机层与底图：视频真正可显示后淡出静态 picture，减少跳变 */
+.scene-frame__art picture { transition: opacity 0.12s linear; }
+.scene-frame__art.has-video picture { opacity: 0; }
+
 /* ---------- reduced motion ---------- */
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
@@ -2376,6 +2397,8 @@ code {
   .scene-fx__moon { opacity: 0.62; }
   .scene-fx__zzz { display: none; }
   .scene-frame__art { animation: none; }
+  .scene-video { display: none !important; }
+  .scene-frame__art.has-video picture { opacity: 1; }
   .scene-motes { display: none; }
   .tavern-dialogue.is-pop { animation: none; }
   .tavern-dialogue, .actor-zone { transition: none; }

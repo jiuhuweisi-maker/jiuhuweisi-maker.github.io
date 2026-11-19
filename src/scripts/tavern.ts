@@ -23,6 +23,10 @@ import {
   type ActorLine,
   type Story,
 } from '../data/tavern';
+import { TavernVideoManager } from './tavern-video';
+
+/** V1.5 统一视频管理器（模块级单例：与 TavernLife 共享点击通知，不改其状态机） */
+let videoManager: TavernVideoManager | null = null;
 
 /* ------------------------------------------------------------------ *
  * 0. 小工具
@@ -844,6 +848,7 @@ class TavernLife {
 
   private skipStory(): void {
     if (this.phase !== 'story') return;
+    videoManager?.cancelPending();
     this.cancelStory();
     this.phase = 'idle';
     this.storyQueue = null;
@@ -868,6 +873,8 @@ class TavernLife {
     this.interactions += 1;
     this.registerCombo(now);
     if (this.maybeStory(now)) return;
+    // V1.5：点击反馈（台词/高亮）走原有状态机；视频只加视觉层，可被剧情跳过取消
+    videoManager?.react(id);
     if (id === 'dragon') this.dragonClick();
     else if (id === 'whale') this.whaleClick();
     else this.catClick();
@@ -1004,6 +1011,8 @@ function boot(): void {
   const audio = audioSingleton ?? new TavernAudio(player);
   audioSingleton = audio;
   const frames = frame ? new TavernFrames(frame) : null;
+  // V1.5：视频层与音频层相互独立；失败/弱网/reduced-motion 时内部自动静态回退
+  videoManager = frame ? new TavernVideoManager(frame) : null;
   new TavernLife(audio, frames);
 
   if (frame && img) {
