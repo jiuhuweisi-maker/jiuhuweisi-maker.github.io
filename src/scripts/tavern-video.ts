@@ -69,6 +69,7 @@ export class TavernVideoManager {
 
   private pending: ActorId | null = null; // 最多一个待处理请求（最新覆盖）
   private active: ActorId | null = null;  // 当前正在播放的 react
+  private loading: ActorId | null = null; // 当前正在加载的目标，防止旧请求抢先切换
   private loadTimer: number | null = null;
   private idleRetryBound = false;
 
@@ -129,6 +130,12 @@ export class TavernVideoManager {
     const v = this.makeVideo(SOURCES[id], false, `react-${id}`);
     v.addEventListener('error', () => this.onReactError(id));
     v.addEventListener('ended', () => this.onReactEnded(id));
+    // 兜底：个别浏览器在后台/节流时漏发 ended，用播放进度强制收尾，避免停在末帧假死
+    v.addEventListener('timeupdate', () => {
+      if (this.active === id && !v.paused && v.duration > 0 && v.currentTime >= v.duration - 0.18) {
+        this.onReactEnded(id);
+      }
+    });
     // 目标首帧可显示后才真正切换（避免黑屏 / 等待）
     v.addEventListener('loadeddata', () => this.onReactReady(id));
     this.reacts[id] = v;
@@ -179,6 +186,10 @@ export class TavernVideoManager {
   ): void {
     const prev = this.current;
     if (next === prev) {
+      // V1.7 关键修复：目标已是当前层时也要重新 play()。
+      // 之前这里直接 return，导致视频一旦被暂停（自动播放策略 / 切后台 / 上一轮
+      // 切换的 pause），后续所有"恢复播放"调用都被短路，画面永久停在静帧。
+      if (next && next.paused) void next.play().catch(() => onError?.());
       onDone?.();
       return;
     }
@@ -186,7 +197,11 @@ export class TavernVideoManager {
       if (next) {
         next.classList.add('is-shown');
         // 静音 + playsInline：自动播放通常允许；由点击触发的 react 必然允许
-        void next.play().catch(() => onError?.());
+        void next.play().catch(() => {
+          // AbortError 是切换过程中被 pause 打断的正常现象，不要误判为失败
+          if (next !== this.current) return;
+          onError?.();
+        });
       }
       if (prev && prev !== next) {
         prev.classList.remove('is-shown');
@@ -247,15 +262,18 @@ export class TavernVideoManager {
 
   /** 点击角色：立即反馈由台词/高亮负责（TavernLife），这里只管视频 */
   react(id: ActorId): void {
-    if (!this.enabled || this.state === 'ERROR' || document.hidden) return;
-    if (this.active === id) return; // 同一角色互动中重复点击：不重启动画
+    if (!this.enabled || this.state === 'ERROR') return;
+    if (this.active === id && this.state === 'REACT_PLAYING') return; // 同角色互动中重复点击：不重启动画
 
-    // 不同角色：当前动画不截断，只记录最新待处理请求（覆盖旧的）
-    if (this.state === 'REACT_PLAYING' || this.state === 'REACT_LOADING' || this.state === 'RETURNING') {
+    // 页面不可见时不丢弃用户意图，记下来，回到前台再执行
+    if (document.hidden) {
       this.pending = id;
       return;
     }
 
+    // V1.7：不同角色立即切换，不再排队等上一段 8s 播完。
+    // 旧逻辑把请求 pending 到上一段结束才处理，用户连点时会觉得"点了没反应"。
+    // 若目标仍在加载中则覆盖为最新请求，避免半途切走造成闪烁。
     this.startReact(id);
   }
 
@@ -263,6 +281,7 @@ export class TavernVideoManager {
     const v = this.reacts[id];
     if (!v) return;
     this.pending = null;
+    this.loading = id;
     if (v.readyState >= 2) {
       this.swapToReact(id, v);
       return;
@@ -271,6 +290,7 @@ export class TavernVideoManager {
     v.preload = 'auto';
     v.load();
     this.armLoadTimeout(v, () => {
+      if (this.loading !== id) return; // 已被更新的点击覆盖
       if (v.readyState >= 2) this.swapToReact(id, v);
       else this.fail();
     });
@@ -278,7 +298,7 @@ export class TavernVideoManager {
 
   /** 目标首帧可显示时被调用：若正等待该视频则切换 */
   private onReactReady(id: ActorId): void {
-    if (this.state !== 'REACT_LOADING') return;
+    if (this.state !== 'REACT_LOADING' || this.loading !== id) return;
     const v = this.reacts[id];
     if (v && v.readyState >= 2) this.swapToReact(id, v);
   }
@@ -286,6 +306,7 @@ export class TavernVideoManager {
   /** 先让目标回到首帧、再同帧替换；当前层在整个准备期间继续播放，不提前隐藏 */
   private swapToReact(id: ActorId, v: HTMLVideoElement): void {
     this.clearLoadTimer();
+    this.loading = null;
     this.active = id;
     this.pending = null;
     this.state = 'REACT_PLAYING';
@@ -303,6 +324,7 @@ export class TavernVideoManager {
   }
 
   private onReactError(id: ActorId): void {
+    if (this.loading === id) this.loading = null;
     if (this.active === id) this.active = null;
     // 单个互动视频失败不影响静态图与台词，回退待机
     this.returnToIdle();
@@ -349,11 +371,22 @@ export class TavernVideoManager {
     if (document.hidden) {
       this.idle?.pause();
       if (this.active) this.reacts[this.active]?.pause();
-    } else if (this.current) {
-      // 只恢复当前可见层，不切换 class，避免后台期间状态变化导致闪屏
-      void this.current.play().catch(() => {
-        if (this.active && this.current === this.reacts[this.active]) this.onReactError(this.active);
-      });
+    } else {
+      // 回到前台：先执行后台期间累积的点击意图，再恢复可见层播放
+      const next = this.pending;
+      this.pending = null;
+      if (next && this.active !== next) {
+        this.startReact(next);
+        return;
+      }
+      if (this.current) {
+        // 即使 current 未变也调用 switchLayer，同层短路分支会确保 paused 时被重新 play()
+        const isReact = this.active && this.current === this.reacts[this.active];
+        this.switchLayer(this.current, () => {
+          if (this.active) this.onReactError(this.active);
+        });
+        void isReact; // 保留语义：react 失败走 onReactError 回退
+      }
     }
   }
 
@@ -361,6 +394,7 @@ export class TavernVideoManager {
   private fail(): void {
     this.state = 'ERROR';
     this.clearLoadTimer();
+    this.loading = null;
     this.art?.classList.remove('has-video');
     this.current = null;
     [this.idle, ...Object.values(this.reacts)].forEach((v) => {

@@ -2391,6 +2391,40 @@ code {
 /* 视频启用后 V1.3 动作帧层让位，避免两套动画同时切 src 造成闪烁 */
 .scene-frame__art.has-video .frame-layer { display: none; }
 
+/* ---- V1.7 按钮操作反馈：按下瞬间的像素闪光，统一轻量，不改布局 ---- */
+.is-pressed {
+  animation: uiPress 0.24s steps(3, end) !important;
+}
+@keyframes uiPress {
+  0%   { filter: brightness(1.55) saturate(1.2); }
+  100% { filter: brightness(1); }
+}
+/* 角色热区点击：短暂描边脉冲，即使视频还在准备也能立刻看到"点到了" */
+.actor-zone.is-pressed {
+  animation: zonePress 0.32s steps(4, end) !important;
+}
+@keyframes zonePress {
+  0%   { border-color: rgba(255, 217, 138, 1); background: rgba(255, 214, 140, 0.22); }
+  100% { border-color: rgba(255, 217, 138, 0); background: rgba(255, 214, 140, 0); }
+}
+/* 从点击点扩散的像素涟漪（JS 动态插入，pointer-events:none） */
+.tap-ripple {
+  position: fixed;
+  z-index: 9999;
+  width: 10px;
+  height: 10px;
+  margin: -5px 0 0 -5px;
+  border: 2px solid var(--amber-soft);
+  background: rgba(255, 217, 138, 0.28);
+  box-shadow: 0 0 0 2px rgba(43, 26, 51, 0.55), 0 0 12px rgba(255, 217, 138, 0.6);
+  pointer-events: none;
+  animation: tapRipple 0.34s steps(4, end) forwards;
+}
+@keyframes tapRipple {
+  0%   { transform: scale(0.6); opacity: 0.95; }
+  100% { transform: scale(3.2); opacity: 0; }
+}
+
 /* ---------- reduced motion ---------- */
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
@@ -2406,6 +2440,7 @@ code {
   .scene-frame__art { animation: none; }
   .scene-video { display: none !important; }
   .scene-frame__art.has-video picture { opacity: 1; }
+  .tap-ripple { display: none; }
   .scene-motes { display: none; }
   .tavern-dialogue.is-pop { animation: none; }
   .tavern-dialogue, .actor-zone { transition: none; }

@@ -24,6 +24,7 @@ import {
   type Story,
 } from '../data/tavern';
 import { TavernVideoManager } from './tavern-video';
+import { initUiFeedback } from './ui-feedback';
 
 /** V1.5 统一视频管理器（模块级单例：与 TavernLife 共享点击通知，不改其状态机） */
 let videoManager: TavernVideoManager | null = null;
@@ -1004,6 +1005,9 @@ function boot(): void {
   const globals = window as unknown as { __tavernAudioBooted?: boolean };
   if (globals.__tavernAudioBooted) return;
   globals.__tavernAudioBooted = true;
+
+  // V1.7：全站按钮按下反馈（纯视觉、事件委托，不改任何原有点击逻辑）
+  initUiFeedback();
 
   const frame = one<HTMLElement>('[data-scene]');
   const img = one<HTMLImageElement>('.scene-frame__art img', frame ?? document);
