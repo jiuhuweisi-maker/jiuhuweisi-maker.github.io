@@ -1,5 +1,5 @@
 /**
- * Bistro's Tavern V1.5 — TavernVideoManager
+ * Bistro's Tavern V1.6 — TavernVideoManager（画面稳定版）
  *
  * 统一头图视频状态机，仅管理静态头图 / 待机视频 / 三角色互动视频的切换。
  * 与 TavernAudio（BGM）完全独立：所有视频无音轨、静音、内联播放。
@@ -7,12 +7,15 @@
  * 状态：STATIC → IDLE_LOADING → IDLE_PLAYING → REACT_LOADING → REACT_PLAYING
  *       → RETURNING → IDLE_PLAYING；任何异常 → ERROR（静态回退）。
  *
- * 设计要点：
- *  - 先准备目标视频到可播放，再切换可见层，绝不先隐藏当前层造成黑屏。
- *  - 同一时刻只有一个 <video> 真正在播；切换时允许极短重叠避免黑屏。
+ * V1.6 稳定性约束（针对「没人点还在抖 / 切换时闪烁」）：
+ *  - 静态底图始终可见，视频层只在就绪后覆盖；任何空窗都露出主视觉，绝不黑底。
+ *  - 所有可见层切换统一走 switchLayer()，在同一个 requestAnimationFrame 内
+ *    先亮新层、再灭旧层；不做 opacity 交叉淡入，避免半透明叠图造成亮度跳变。
+ *  - 切换前先 rewind() 到 0 并等 seeked，确保显示的是首帧而不是黑帧/旧帧。
+ *  - 父级 sceneBreathe 无限缩放已由 CSS 移除；视频层与底图保持同一套变换。
  *  - 连点：当前动画不截断；只保留一个"最新待处理请求"，被更新请求覆盖。
  *  - 失败（404 / 解码 / 自动播放被拦截 / 超时）都回退静态图，不无限重试。
- *  - 页面隐藏暂停解码；回到前台恢复；reduced-motion / 弱网不启用视频。
+ *  - 页面隐藏暂停解码；回到前台只恢复当前可见层；reduced-motion / 弱网不启用视频。
  *
  * 本模块不 import 第三方库，不触碰 BGM、台词、剧情状态机、热区坐标。
  */
@@ -38,6 +41,7 @@ const SOURCES: Record<'idle' | ActorId, Source> = {
 };
 
 const LOAD_TIMEOUT_MS = 12000;
+const SEEK_TIMEOUT_MS = 600;
 
 type IdleWindow = Window & {
   requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number;
@@ -60,6 +64,8 @@ export class TavernVideoManager {
 
   private idle: HTMLVideoElement | null = null;
   private reacts: Partial<Record<ActorId, HTMLVideoElement>> = {};
+  /** 当前可见的视频层；所有切换都经由 switchLayer 同帧完成 */
+  private current: HTMLVideoElement | null = null;
 
   private pending: ActorId | null = null; // 最多一个待处理请求（最新覆盖）
   private active: ActorId | null = null;  // 当前正在播放的 react
@@ -124,7 +130,7 @@ export class TavernVideoManager {
     v.addEventListener('error', () => this.onReactError(id));
     v.addEventListener('ended', () => this.onReactEnded(id));
     // 目标首帧可显示后才真正切换（避免黑屏 / 等待）
-    v.addEventListener('canplay', () => this.onReactReady(id));
+    v.addEventListener('loadeddata', () => this.onReactReady(id));
     this.reacts[id] = v;
     this.art?.appendChild(v);
   }
@@ -162,17 +168,66 @@ export class TavernVideoManager {
     }
   }
 
+  /**
+   * 统一可见层切换：目标就绪后，在同一个 rAF 内先亮新层、再灭旧层。
+   * 视频层无 opacity 过渡，因此不存在两层半透明叠加或中间空窗。
+   */
+  private switchLayer(
+    next: HTMLVideoElement | null,
+    onError?: () => void,
+    onDone?: () => void,
+  ): void {
+    const prev = this.current;
+    if (next === prev) {
+      onDone?.();
+      return;
+    }
+    window.requestAnimationFrame(() => {
+      if (next) {
+        next.classList.add('is-shown');
+        // 静音 + playsInline：自动播放通常允许；由点击触发的 react 必然允许
+        void next.play().catch(() => onError?.());
+      }
+      if (prev && prev !== next) {
+        prev.classList.remove('is-shown');
+        prev.pause();
+      }
+      this.current = next;
+      onDone?.();
+    });
+  }
+
+  /** seek 回 0 并等首帧解码完成，避免切换瞬间出现黑帧或上一轮的旧帧 */
+  private rewind(v: HTMLVideoElement): Promise<void> {
+    if (v.currentTime <= 0.02) return Promise.resolve();
+    return new Promise((resolve) => {
+      let settled = false;
+      let timer = 0;
+      const finish = () => {
+        if (settled) return;
+        settled = true;
+        v.removeEventListener('seeked', finish);
+        window.clearTimeout(timer);
+        resolve();
+      };
+      timer = window.setTimeout(finish, SEEK_TIMEOUT_MS);
+      v.addEventListener('seeked', finish);
+      v.currentTime = 0;
+    });
+  }
+
   private tryStartIdle(): void {
     if (!this.idle || !this.enabled || this.state === 'ERROR') return;
     if (this.state !== 'IDLE_LOADING' && this.state !== 'RETURNING') return;
     if (this.idle.readyState < 2) return;
     this.clearLoadTimer();
-    this.idle.play().then(() => {
-      this.state = 'IDLE_PLAYING';
-      this.idle?.classList.add('is-ready');
-      this.idle?.classList.add('is-shown');
+    void this.rewind(this.idle).then(() => {
+      if (!this.enabled || this.state === 'ERROR') return;
+      if (this.state !== 'IDLE_LOADING' && this.state !== 'RETURNING') return;
       this.art?.classList.add('has-video');
-    }).catch(() => this.handleAutoplayBlocked());
+      this.state = 'IDLE_PLAYING';
+      this.switchLayer(this.idle, () => this.handleAutoplayBlocked());
+    });
   }
 
   /** 自动播放被浏览器阻止：静态图继续显示，绑定一次性手势再试 */
@@ -183,12 +238,8 @@ export class TavernVideoManager {
       document.removeEventListener('pointerdown', retry);
       document.removeEventListener('keydown', retry);
       if (this.state === 'ERROR' || !this.idle) return;
-      this.idle.play().then(() => {
-        this.state = 'IDLE_PLAYING';
-        this.idle?.classList.add('is-ready');
-        this.idle?.classList.add('is-shown');
-        this.art?.classList.add('has-video');
-      }).catch(() => this.fail());
+      this.state = 'IDLE_PLAYING';
+      this.switchLayer(this.idle, () => this.fail());
     };
     document.addEventListener('pointerdown', retry, { once: true });
     document.addEventListener('keydown', retry, { once: true });
@@ -212,47 +263,46 @@ export class TavernVideoManager {
     const v = this.reacts[id];
     if (!v) return;
     this.pending = null;
-    if (v.readyState >= 3) {
+    if (v.readyState >= 2) {
       this.swapToReact(id, v);
-    } else {
-      this.state = 'REACT_LOADING';
-      v.preload = 'auto';
-      v.load();
-      this.armLoadTimeout(v, () => {
-        if (v.readyState >= 3) this.swapToReact(id, v);
-        else this.fail();
-      });
+      return;
     }
+    this.state = 'REACT_LOADING';
+    v.preload = 'auto';
+    v.load();
+    this.armLoadTimeout(v, () => {
+      if (v.readyState >= 2) this.swapToReact(id, v);
+      else this.fail();
+    });
   }
 
   /** 目标首帧可显示时被调用：若正等待该视频则切换 */
   private onReactReady(id: ActorId): void {
     if (this.state !== 'REACT_LOADING') return;
     const v = this.reacts[id];
-    if (v && v.readyState >= 3) this.swapToReact(id, v);
+    if (v && v.readyState >= 2) this.swapToReact(id, v);
   }
 
-  /** 先让目标就绪、再单层可见切换：当前层不提前隐藏，避免黑屏 */
+  /** 先让目标回到首帧、再同帧替换；当前层在整个准备期间继续播放，不提前隐藏 */
   private swapToReact(id: ActorId, v: HTMLVideoElement): void {
     this.clearLoadTimer();
     this.active = id;
-    this.idle?.pause();
-    this.idle?.classList.remove('is-shown');
+    this.pending = null;
     this.state = 'REACT_PLAYING';
-    v.currentTime = 0;
-    v.play().then(() => v.classList.add('is-shown')).catch(() => this.onReactError(id));
+    void this.rewind(v).then(() => {
+      if (this.active !== id || this.state !== 'REACT_PLAYING') return;
+      this.switchLayer(v, () => this.onReactError(id));
+    });
   }
 
   private onReactEnded(id: ActorId): void {
     if (this.active !== id) return;
-    this.reacts[id]?.classList.remove('is-shown');
-    this.reacts[id]?.pause();
     this.active = null;
+    // 不在这里提前 remove class，交给 returnToIdle 的同帧切换处理
     this.returnToIdle();
   }
 
   private onReactError(id: ActorId): void {
-    this.reacts[id]?.classList.remove('is-shown');
     if (this.active === id) this.active = null;
     // 单个互动视频失败不影响静态图与台词，回退待机
     this.returnToIdle();
@@ -262,24 +312,24 @@ export class TavernVideoManager {
   private returnToIdle(): void {
     if (!this.enabled || this.state === 'ERROR') return;
     this.state = 'RETURNING';
-    if (this.idle && this.idle.readyState >= 2) {
-      this.idle.currentTime = 0;
-      this.idle.play().then(() => {
+    const idle = this.idle;
+    if (idle && idle.readyState >= 2) {
+      void this.rewind(idle).then(() => {
+        if (!this.enabled || this.state === 'ERROR') return;
+        if (this.state !== 'RETURNING') return;
         this.state = 'IDLE_PLAYING';
-        this.idle?.classList.add('is-shown');
-        this.flushPending();
-      }).catch(() => {
-        this.art?.classList.remove('has-video');
-        this.state = 'STATIC';
-        this.flushPending();
+        this.switchLayer(idle, () => this.fallbackToStatic(), () => this.flushPending());
       });
     } else {
-      // 待机首帧没准备好：静态头图过渡
-      this.art?.classList.remove('has-video');
-      this.idle?.classList.remove('is-shown');
-      this.state = 'STATIC';
+      this.fallbackToStatic();
       this.flushPending();
     }
+  }
+
+  /** 单层静态回退：只撤掉视频层，静态底图与台词完全不受影响 */
+  private fallbackToStatic(): void {
+    this.switchLayer(null);
+    this.state = 'STATIC';
   }
 
   /** 处理排队的最新请求（只有一个） */
@@ -299,10 +349,11 @@ export class TavernVideoManager {
     if (document.hidden) {
       this.idle?.pause();
       if (this.active) this.reacts[this.active]?.pause();
-    } else if (this.state === 'IDLE_PLAYING') {
-      this.idle?.play().catch(() => {});
-    } else if (this.state === 'REACT_PLAYING' && this.active) {
-      this.reacts[this.active]?.play().catch(() => this.onReactError(this.active!));
+    } else if (this.current) {
+      // 只恢复当前可见层，不切换 class，避免后台期间状态变化导致闪屏
+      void this.current.play().catch(() => {
+        if (this.active && this.current === this.reacts[this.active]) this.onReactError(this.active);
+      });
     }
   }
 
@@ -311,6 +362,7 @@ export class TavernVideoManager {
     this.state = 'ERROR';
     this.clearLoadTimer();
     this.art?.classList.remove('has-video');
+    this.current = null;
     [this.idle, ...Object.values(this.reacts)].forEach((v) => {
       if (!v) return;
       v.pause();

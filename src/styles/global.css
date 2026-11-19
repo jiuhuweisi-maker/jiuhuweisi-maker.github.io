@@ -721,7 +721,12 @@ code {
 .scene-frame__art {
   position: absolute;
   inset: 0;
-  animation: sceneBreathe 16s ease-in-out infinite;
+  /* V1.6 稳定性修复：移除 sceneBreathe 的 16s 无限缩放。
+     该动画会让静态图、动作帧层、视频层一起被父级反复缩放，在
+     image-rendering: pixelated 下表现为「没人碰它画面还在抖」。
+     视频本身就是动态内容，不再需要靠底图缩放制造呼吸感。 */
+  /* 独立 stacking context：让光效层 .scene-fx 始终盖在视频之上 */
+  z-index: 0;
 }
 .scene-frame__art picture {
   display: block;
@@ -2363,7 +2368,7 @@ code {
   transform: scale(1.02) translate3d(calc(var(--px, 0) * 1px), calc(var(--py, 0) * 1px), 0);
 }
 
-/* ---- V1.5 Veo 头图视频层：与底图同一套变换，逐像素对齐 ---- */
+/* ---- V1.5/V1.6 头图视频层：与底图同一套变换，逐像素对齐 ---- */
 .scene-video {
   position: absolute;
   inset: 0;
@@ -2374,15 +2379,17 @@ code {
   pointer-events: none;
   image-rendering: pixelated;
   transform: scale(1.02) translate3d(calc(var(--px, 0) * 1px), calc(var(--py, 0) * 1px), 0);
-  /* 极短线性切换只为避免黑屏，不做模糊/夸张淡入淡出 */
+  /* V1.6：取消 opacity 交叉淡入。两段视频首尾帧与主视觉一致，
+     瞬时替换不会出现"半透明叠图"的亮度跳变；由 JS 在同一帧内完成 new on / old off。 */
   opacity: 0;
-  transition: opacity 0.12s linear;
+  visibility: hidden;
+  transition: none;
 }
-.scene-video.is-ready { opacity: 0; }
-.scene-video.is-shown { opacity: 1; z-index: 2; }
-/* 待机层与底图：视频真正可显示后淡出静态 picture，减少跳变 */
-.scene-frame__art picture { transition: opacity 0.12s linear; }
-.scene-frame__art.has-video picture { opacity: 0; }
+.scene-video.is-shown { opacity: 1; visibility: visible; z-index: 3; }
+/* 静态底图永远在场：视频加载、seek、切换的任何空窗都露出主视觉，绝不闪黑底 */
+.scene-frame__art.has-video picture { opacity: 1; }
+/* 视频启用后 V1.3 动作帧层让位，避免两套动画同时切 src 造成闪烁 */
+.scene-frame__art.has-video .frame-layer { display: none; }
 
 /* ---------- reduced motion ---------- */
 @media (prefers-reduced-motion: reduce) {
